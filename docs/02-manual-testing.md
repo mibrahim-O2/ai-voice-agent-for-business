@@ -45,10 +45,21 @@ regenerate the calendar first (see 01-user-workflow, troubleshooting).
 | B13 | `cancel_appointment`: `A-004`, reason `test` | `cancelled: true`, `slot_released: true`, late fee 0 | |
 | B14 | Run `voice-agent reset-data`, then `get_lead L-026` | `not_found`: the demo data is back to the original | |
 
-## C. RAG answers *(steps added in Task 3)*
+## C. RAG answers
 
-Will include: a question the knowledge base answers (with the source shown), and a question it
-cannot answer (the agent must say it does not know).
+Steps C1–C8 check retrieval directly. Section E checks that the agent uses it in a conversation.
+
+| # | Step | Expected result | Pass/Fail |
+|---|---|---|---|
+| C1 | `voice-agent ingest` | `Indexed 10 documents as 12 chunks with local-tfidf-v1` | |
+| C2 | `voice-agent ask "What are your business hours?"` | Top passage from `02-business-hours.md`: Monday to Friday, 8:00 AM to 6:00 PM | |
+| C3 | `voice-agent ask "How much does a diagnostic visit cost?"` | Passage from `03-services-and-pricing.md` showing `$89` | |
+| C4 | `voice-agent ask "I smell gas, what should I do?"` | Passage from `08-emergency-service.md`: leave the building, call the gas utility or 911 from outside | |
+| C5 | `voice-agent ask "Do you install solar panels?"` (**not in the knowledge base**) | `I don't know: nothing relevant in the knowledge base` | |
+| C6 | `voice-agent ask "What is the capital of France?"` | `I don't know …` | |
+| C7 | `voice-agent rag-eval` | `answered 17/18 … refused 10/10` | |
+| C8 | Optional, uses your key: `voice-agent ingest --provider openai`, then `voice-agent ask "Can I pay by card?" --provider openai` | `OpenAI embedding requests made: 1`; a passage from `07-payment-and-warranty.md` | |
+| C9 | Edit `data/knowledge/02-business-hours.md` (change 6:00 PM to 7:00 PM), then `voice-agent ask "When does the office close?"` | The answer shows 7:00 PM: the local index rebuilt itself. Undo the edit with `git checkout data/knowledge` | |
 
 ## D. Human-in-the-loop *(steps added in Task 4)*
 
@@ -72,6 +83,8 @@ Will include: the approve path and the reject path for a booking.
 | F11 | `update_lead` with only `lead_id` | Error: nothing to update | |
 | F12 | `voice-agent mcp --transport streamable-http --host 0.0.0.0` | Refuses to start and explains why (no authentication) | |
 | F13 | Book a slot for `L-026`, then book a second slot for `L-026` | Second call: `conflict: lead L-026 already has upcoming appointment …; to reschedule, cancel it first` | |
+| F15 | `EMBEDDINGS_PROVIDER=openai` with an empty `OPENAI_API_KEY`, then `voice-agent ask "hours"` | Clear error: `OPENAI_API_KEY is not set …`; no crash trace | |
+| F16 | `voice-agent ask "   "` | Error: query must not be empty | |
 | F14 | `cancel_appointment` for an appointment whose start time has passed (use a demo date that is already in the past, or skip if none) | Error: already started or taken place; no late fee | |
 | F1 | Empty `OPENAI_API_KEY` in `.env`, then start live text mode | A clear message: `OPENAI_API_KEY is not set. Copy .env.example to .env…`; no crash trace | |
 

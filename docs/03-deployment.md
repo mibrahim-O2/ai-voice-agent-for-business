@@ -39,6 +39,18 @@ and how the API key stays secret.
 - For a non-editable install (for example `pip install .` in a Docker image), set
   `VOICE_AGENT_DATA_DIR` to the absolute path of the `data/` folder.
 
+### Knowledge base (RAG) notes for deployment (from Task 3)
+
+- With `EMBEDDINGS_PROVIDER=local` (the default) nothing needs to happen at deploy time: the index
+  is built in about a second on first use and stored in `VOICE_AGENT_VAR_DIR/index/`.
+- With `EMBEDDINGS_PROVIDER=openai`, run `voice-agent ingest --provider openai` once after each
+  deploy (for example in the start command). It makes one embeddings request for the whole
+  knowledge base (fractions of a cent with `text-embedding-3-small`), and each question costs one
+  more small request. If the index is missing, the CRM tools keep working and the knowledge tool
+  returns a clear "unavailable" error. It never builds the index silently.
+- The relevance thresholds (0.115 local, 0.38 OpenAI) are calibrated on `data/rag_eval.json`.
+  Re-run `voice-agent rag-eval` after changing documents.
+
 ## Part C: Keeping the API key secret (applies to every deployment)
 
 - The key lives only in `.env` on your machine, or in the hosting platform's secret settings.
