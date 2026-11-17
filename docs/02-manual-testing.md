@@ -85,7 +85,7 @@ Will include: the approve path and the reject path for a booking.
 | F13 | Book a slot for `L-026`, then book a second slot for `L-026` | Second call: `conflict: lead L-026 already has upcoming appointment …; to reschedule, cancel it first` | |
 | F15 | `EMBEDDINGS_PROVIDER=openai` with an empty `OPENAI_API_KEY`, then `voice-agent ask "hours"` | Clear error: `OPENAI_API_KEY is not set …`; no crash trace | |
 | F16 | `voice-agent ask "   "` | Error: query must not be empty | |
-| F17 | Set `OPENAI_API_KEY` to a wrong value (e.g. `sk-wrong`), then `voice-agent ingest --provider openai` | `Ingest failed: OpenAI embeddings request failed (AuthenticationError, HTTP 401). Check OPENAI_API_KEY.`; **no part of the key is printed**, no traceback | |
+| F17 | Set `OPENAI_API_KEY` to a wrong value (e.g. `wrong-key-for-testing`), then `voice-agent ingest --provider openai` | `Ingest failed: OpenAI embeddings request failed (AuthenticationError, HTTP 401). Check OPENAI_API_KEY.`; **no part of the key is printed**, no traceback | |
 | F14 | `cancel_appointment` for an appointment whose start time has passed (use a demo date that is already in the past, or skip if none) | Error: already started or taken place; no late fee | |
 | F1 | Empty `OPENAI_API_KEY` in `.env`, then start live text mode | A clear message: `OPENAI_API_KEY is not set. Copy .env.example to .env…`; no crash trace | |
 
