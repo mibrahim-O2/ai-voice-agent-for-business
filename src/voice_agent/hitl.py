@@ -157,6 +157,9 @@ class ApprovalGate:
         self.describe_lead = describe_lead
         self.describe_slot = describe_slot
         self.session_warnings: list[str] = []  # e.g. a suspected prompt injection earlier in the call
+        # One decision at a time: a reviewer must never see two prompts at once, or an answer could
+        # be applied to the wrong action (voice mode can request several approvals together).
+        self._one_at_a_time = asyncio.Lock()
 
     @staticmethod
     def parse_arguments(raw: Any) -> dict[str, Any]:
@@ -192,13 +195,14 @@ class ApprovalGate:
             reason=request.reason,
             warnings=request.warnings,
         )
-        started = datetime.now()
-        try:
-            decision = await asyncio.wait_for(self.approver.decide(request), timeout=self.timeout_seconds)
-        except TimeoutError:
-            decision = Decision(False, "system", f"no decision within {self.timeout_seconds:.0f}s")
-        except Exception as exc:  # noqa: BLE001 - any approver failure must reject (fail closed)
-            decision = Decision(False, "system", f"approver failed ({type(exc).__name__})")
+        async with self._one_at_a_time:
+            started = datetime.now()  # the timeout covers the reviewer's own decision, not the queue
+            try:
+                decision = await asyncio.wait_for(self.approver.decide(request), timeout=self.timeout_seconds)
+            except TimeoutError:
+                decision = Decision(False, "system", f"no decision within {self.timeout_seconds:.0f}s")
+            except Exception as exc:  # noqa: BLE001 - any approver failure must reject (fail closed)
+                decision = Decision(False, "system", f"approver failed ({type(exc).__name__})")
         self.logger.log(
             "approval_decision",
             tool=tool_name,
