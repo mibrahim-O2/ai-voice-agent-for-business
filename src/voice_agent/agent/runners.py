@@ -56,6 +56,7 @@ async def run_text_chat(settings: Settings, approver: Approver) -> None:
             reply = await session.send(line)
             print(f"\nAgent: {reply}\n")
         _print_summary(session.logger)
+        print(f"Model requests this call: {session.model_requests}", file=sys.stderr)
 
 
 async def run_voice_typed(settings: Settings, approver: Approver, wav_path: Path, voice: str) -> None:

@@ -99,6 +99,7 @@ class TextSession:
         self._logged_calls: set[str] = set()
         self._logged_outputs: set[str] = set()
         self._rejected_calls: set[str] = set()
+        self.model_requests = 0  # calls to the model (each tool round-trip is one), for cost reporting
         self._model = model or settings.text_model
         self.agent: Agent | None = None
         if isinstance(self._model, str):
@@ -127,7 +128,11 @@ class TextSession:
         return self
 
     async def __aexit__(self, *exc: object) -> None:
-        self.logger.log("session_end", turns=sum(1 for e in self.logger.events if e["type"] == "caller"))
+        self.logger.log(
+            "session_end",
+            turns=sum(1 for e in self.logger.events if e["type"] == "caller"),
+            model_requests=self.model_requests,
+        )
         await self.mcp_server.cleanup()
 
     @property
@@ -154,6 +159,7 @@ class TextSession:
             result = await Runner.run(
                 self.agent, run_input, context=self.context, max_turns=MAX_TURNS, run_config=self.run_config
             )
+            self.model_requests += len(result.raw_responses)
             while result.interruptions:
                 self._log_new_items(result.new_items)
                 state = result.to_state()
@@ -167,9 +173,11 @@ class TextSession:
                     else:
                         self._rejected_calls.add(call_id)
                         state.reject(item, rejection_message=self.gate.rejection_message(decision))
+                before = len(result.raw_responses)
                 result = await Runner.run(
                     self.agent, state, context=self.context, max_turns=MAX_TURNS, run_config=self.run_config
                 )
+                self.model_requests += max(0, len(result.raw_responses) - before)
         except Exception as exc:
             self.logger.log("error", where="agent_run", error=type(exc).__name__, detail=str(exc)[:300])
             raise

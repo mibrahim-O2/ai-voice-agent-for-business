@@ -161,8 +161,8 @@ class VoiceSession:
     # ---------- input ----------
     async def send_text(self, text: str) -> None:
         """Typed caller input (no microphone needed). Treated exactly like spoken input."""
-        suspicious = self._screen_caller_text(text)
         self.logger.log("caller", text=text, input="typed")
+        suspicious = self._screen_caller_text(text)
         self.response_done.clear()
         await self._session.send_message(wrap_caller_text(text, bool(suspicious)))
 
@@ -253,8 +253,8 @@ class VoiceSession:
         if role == "user":
             if text.startswith("<caller_message"):
                 return  # typed input, already logged by send_text
-            self._screen_caller_text(text)
             self.logger.log("caller", text=text, input="speech")
+            self._screen_caller_text(text)
             self.on_transcript("caller", text)
         elif role == "assistant":
             self.logger.log("agent", text=text)
