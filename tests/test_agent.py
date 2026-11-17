@@ -319,3 +319,26 @@ def test_unwrap_tool_output_handles_mcp_text_content():
     assert unwrap_tool_output('{"type": "text", "text": "{\\"a\\": 1}"}') == '{"a": 1}'
     assert unwrap_tool_output([{"type": "text", "text": "x"}, {"type": "text", "text": "y"}]) == "x\ny"
     assert unwrap_tool_output("plain") == "plain"
+
+
+# ---------- console approver ----------
+@pytest.mark.parametrize(
+    ("answers", "approved", "reason"),
+    [(["y"], True, ""), (["YES"], True, ""), (["n", "testing reject"], False, "testing reject")],
+)
+async def test_console_approver(answers, approved, reason, capsys):
+    from voice_agent.hitl import ConsoleApprover
+
+    replies = iter(answers)
+    approver = ConsoleApprover(reviewer="tester", input_fn=lambda _prompt: next(replies))
+    request = ApprovalRequest(
+        "book_appointment", {"lead_id": "L-005"}, "c1", "Book slot X", "books time", "S1", ["W!"]
+    )
+    decision = await approver.decide(request)
+    assert (decision.approved, decision.decided_by, decision.reason) == (approved, "tester", reason)
+    shown = capsys.readouterr().err
+    assert (
+        "APPROVAL NEEDED (nothing has been done yet)" in shown
+        and "Book slot X" in shown
+        and "WARNING: W!" in shown
+    )
