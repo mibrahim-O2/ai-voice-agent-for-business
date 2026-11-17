@@ -30,6 +30,7 @@ def clean_env(monkeypatch):
         "OPENAI_REALTIME_MODEL",
         "EMBEDDINGS_PROVIDER",
         "VOICE_AGENT_VAR_DIR",
+        "VOICE_AGENT_DATA_DIR",
         "LOG_LEVEL",
     ):
         monkeypatch.delenv(var, raising=False)

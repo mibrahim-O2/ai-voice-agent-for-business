@@ -12,8 +12,21 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+# Repo root when running from a clone (editable install). For a regular install, set
+# VOICE_AGENT_DATA_DIR (and VOICE_AGENT_VAR_DIR) to absolute paths instead.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
+
+
+def _resolve_dir(value: str | None, default: Path) -> Path:
+    path = Path(value.strip()) if value and value.strip() else default
+    return path if path.is_absolute() else PROJECT_ROOT / path
+
+
+def data_dir() -> Path:
+    """The dummy-data directory: VOICE_AGENT_DATA_DIR if set, else <repo>/data."""
+    return _resolve_dir(os.getenv("VOICE_AGENT_DATA_DIR"), DATA_DIR)
+
 
 VALID_EMBEDDINGS = ("local", "openai")
 VALID_LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
@@ -59,9 +72,7 @@ def load_settings(env_file: str | os.PathLike[str] | None = None) -> Settings:
     if log_level not in VALID_LOG_LEVELS:
         raise ConfigError(f"LOG_LEVEL must be one of {VALID_LOG_LEVELS}, got {log_level!r}")
 
-    var_dir = Path(os.getenv("VOICE_AGENT_VAR_DIR", "var").strip() or "var")
-    if not var_dir.is_absolute():
-        var_dir = PROJECT_ROOT / var_dir
+    var_dir = _resolve_dir(os.getenv("VOICE_AGENT_VAR_DIR"), PROJECT_ROOT / "var")
 
     return Settings(
         openai_api_key=(os.getenv("OPENAI_API_KEY") or "").strip() or None,
@@ -70,4 +81,5 @@ def load_settings(env_file: str | os.PathLike[str] | None = None) -> Settings:
         embeddings_provider=embeddings,
         var_dir=var_dir,
         log_level=log_level,
+        data_dir=data_dir(),
     )

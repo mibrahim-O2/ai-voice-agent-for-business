@@ -11,10 +11,11 @@ import re
 from datetime import date, datetime
 from enum import StrEnum
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .config import DATA_DIR
+from .config import data_dir
 
 LEAD_ID_RE = re.compile(r"^L-\d{3,}$")
 SLOT_ID_RE = re.compile(r"^S-\d{8}-\d{4}$")
@@ -133,6 +134,8 @@ class Appointment(BaseModel):
 
 
 class Calendar(BaseModel):
+    """Appointment calendar. Slot datetimes are naive and are local times in `timezone`."""
+
     model_config = ConfigDict(extra="forbid")
 
     timezone: str
@@ -142,6 +145,19 @@ class Calendar(BaseModel):
     end_date: date
     slots: list[Slot]
     appointments: list[Appointment] = Field(default_factory=list)
+
+    @field_validator("timezone")
+    @classmethod
+    def _valid_zone(cls, v: str) -> str:
+        try:
+            ZoneInfo(v)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(f"unknown IANA timezone {v!r}") from exc
+        return v
+
+    @property
+    def tz(self) -> ZoneInfo:
+        return ZoneInfo(self.timezone)
 
     @model_validator(mode="after")
     def _consistent(self) -> Calendar:
@@ -159,14 +175,14 @@ class Calendar(BaseModel):
 
 
 def load_leads(path: Path | None = None) -> list[Lead]:
-    raw = json.loads((path or DATA_DIR / "leads.json").read_text(encoding="utf-8"))
+    raw = json.loads((path or data_dir() / "leads.json").read_text(encoding="utf-8"))
     return [Lead.model_validate(item) for item in raw["leads"]]
 
 
 def load_calendar(path: Path | None = None) -> Calendar:
-    raw = json.loads((path or DATA_DIR / "calendar.json").read_text(encoding="utf-8"))
+    raw = json.loads((path or data_dir() / "calendar.json").read_text(encoding="utf-8"))
     return Calendar.model_validate(raw)
 
 
 def list_knowledge_files(directory: Path | None = None) -> list[Path]:
-    return sorted((directory or DATA_DIR / "knowledge").glob("*.md"))
+    return sorted((directory or data_dir() / "knowledge").glob("*.md"))

@@ -43,3 +43,13 @@ def test_invalid_values_are_rejected(clean_env, tmp_path, var, value):
     clean_env.setenv(var, value)
     with pytest.raises(ConfigError, match=var):
         load_settings(tmp_path / "missing.env")
+
+
+def test_relative_and_absolute_dirs(clean_env, tmp_path):
+    from voice_agent.config import PROJECT_ROOT
+
+    clean_env.setenv("VOICE_AGENT_VAR_DIR", "custom-var")
+    clean_env.setenv("VOICE_AGENT_DATA_DIR", str(tmp_path))
+    settings = load_settings(tmp_path / "missing.env")
+    assert settings.var_dir == PROJECT_ROOT / "custom-var"
+    assert settings.data_dir == tmp_path
