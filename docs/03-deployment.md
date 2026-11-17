@@ -51,6 +51,21 @@ and how the API key stays secret.
 - The relevance thresholds (0.115 local, 0.38 OpenAI) are calibrated on `data/rag_eval.json`.
   Re-run `voice-agent rag-eval` after changing documents.
 
+### Agent and voice notes for deployment (from Task 4)
+
+- **Text mode** only needs outbound HTTPS to `api.openai.com`.
+- **Voice mode (Realtime)** needs an outbound **WebSocket** (`wss://api.openai.com/v1/realtime`).
+  Check that the platform and any proxy allow WebSocket upgrades. (They were blocked in the cloud
+  sandbox used to build this project, so live voice was tested on a local machine.)
+- **Approvals** are answered in the terminal in this version. A hosted deployment needs an
+  approval channel a reviewer can reach (for example a small web page, Slack or SMS). It should
+  plug into the same `Approver` interface in `src/voice_agent/hitl.py`.
+- **Logs** (`var/logs/sessions.jsonl`) contain what callers said. Treat them as personal data:
+  keep them on a private volume, limit who can read them, and delete them on a schedule.
+  Card numbers and key-like strings are redacted automatically.
+- **Tracing** to the OpenAI dashboard is turned off in code (`tracing_disabled=True`), so call
+  content is not sent anywhere except the model request itself.
+
 ## Part C: Keeping the API key secret (applies to every deployment)
 
 - The key lives only in `.env` on your machine, or in the hosting platform's secret settings.
@@ -58,6 +73,9 @@ and how the API key stays secret.
 - The dashboard is static and public. It never calls OpenAI and never contains a key.
 - CI runs `scripts/check_secrets.py` on every pull request. Run it yourself before merging:
   `python scripts/check_secrets.py --diff main`.
+- The MCP subprocess is started with `OPENAI_API_KEY` set to empty unless it needs OpenAI
+  embeddings, so tools that don't need the key never see it.
+- OpenAI error messages (which can contain a partly masked key) are never printed or logged.
 - If a key ever leaks, revoke it immediately at https://platform.openai.com/api-keys and create a new one.
 
 ## Part D: Telephony and voice costs *(completed in Task 5)*

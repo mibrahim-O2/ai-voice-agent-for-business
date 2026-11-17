@@ -19,7 +19,7 @@ no paid vector database.
 | 1. Foundation | Structure, dummy data, lint, tests, CI, docs skeleton | ✅ done |
 | 2. MCP server | CRM and calendar tools with validation and sensitivity flags | ✅ done |
 | 3. RAG | Local ingest, embeddings, vector store, retrieval tool with "I don't know" rule | ✅ done |
-| 4. Agent + HITL | Text and Realtime voice agent, approval gate, guardrails, structured logs | planned |
+| 4. Agent + HITL | Text and Realtime voice agent, approval gate, guardrails, structured logs | ✅ done |
 | 5. Dashboard | Static GitHub Pages dashboard and deployment guides | planned |
 
 ## Quick start
@@ -37,6 +37,10 @@ voice-agent tools                  # list MCP tools and which need human approva
 voice-agent mcp                    # run the MCP server (stdio); add --transport streamable-http for HTTP
 voice-agent ingest                 # build the knowledge-base index (offline by default)
 voice-agent ask "Are you open on Saturday?"   # retrieval with sources, or "I don't know"
+voice-agent demo                   # 7 scripted calls through the real tools and approvals (no key)
+voice-agent text                   # chat with the live agent (needs OPENAI_API_KEY)
+voice-agent voice                  # Realtime speech-to-speech (pip install -e ".[voice]"); --type: no mic
+voice-agent approvals              # approval requests and decisions
 pytest                             # run the test suite (offline, no key needed)
 ```
 
@@ -49,11 +53,27 @@ src/voice_agent/   Python package
   business/        demo CRM and calendar: JSON store, validation, lead scoring
   mcp_server/      MCP server (CRM, calendar and search_knowledge tools) and the sensitivity policy
   rag/             chunking, local TF-IDF or OpenAI embeddings, local vector index, retriever
+  agent/           shared instructions and guardrails, text mode, Realtime voice mode, demo
+  hitl.py          human approval gate (summaries, fail-closed, logged decisions)
+  observability.py structured, redacted JSONL session logs
 data/              fictional leads, calendar and knowledge documents (see data/README.md)
 scripts/           dummy-data generator and secret scanner
 tests/             pytest suite (runs offline)
 docs/              user workflow, manual testing checklist, deployment guide
 .github/workflows/ CI (lint, secret scan, data validation, tests)
+```
+
+## How a call works
+
+```
+caller (voice or text) -> AI agent (OpenAI Agents SDK; same instructions in both modes)
+   |  greeting says "I'm an AI assistant"; caller text is wrapped as untrusted data
+   |-> search_knowledge (RAG) -> passages with sources, or found=false -> "I don't know"
+   |-> read tools (search_leads, get_lead, list_available_slots) -> run immediately
+   |-> sensitive tools (create/update/qualify lead, add note, book, cancel)
+   |      -> PAUSE -> human approves or rejects -> logged -> runs exactly as shown, or never runs
+   |-> request_human -> hand-off to a person
+   '-> every turn, tool call and decision -> var/logs/sessions.jsonl
 ```
 
 ## Documentation

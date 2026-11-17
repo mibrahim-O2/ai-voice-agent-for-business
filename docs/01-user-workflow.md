@@ -200,13 +200,106 @@ know", which is the safe way to fail.
 
 Keep everything fictional: no real names, phone numbers or companies.
 
-## 9. Run the voice agent *(coming in Task 4)*
+## 9. Run the voice agent
 
-### 9a. Text mode (no microphone needed)
+The same agent (same instructions, tools and safety rules) runs in two modes. Both start the MCP
+server for you in the background and use the knowledge base from step 8.
 
-### 9b. Voice mode (Realtime speech-to-speech)
+### 9a. Try it with no API key: the offline demo
 
-## 10. Approve or reject actions (human-in-the-loop) *(coming in Task 4)*
+```bash
+voice-agent demo
+```
+
+This plays 7 short **scripted** calls through the real tools, knowledge base and approval steps:
+a new caller who books, a question the knowledge base can't answer, a rejected cancellation, a
+prompt-injection attempt, a gas emergency, a caller who hangs up while an approval is waiting,
+and a reschedule. Only the agent's words are scripted; every tool call really runs (or is really
+refused) on a fresh copy of the demo data in `var/demo/`, so your own data is not touched.
+Logs are in `var/demo/logs/sessions.jsonl`.
+
+### 9b. Text mode (no microphone needed, needs your key)
+
+```bash
+voice-agent text
+```
+
+The agent greets you and says it is an AI. Type what a caller would say and press Enter; type
+`quit` to hang up. Things to try:
+
+- `How much does a diagnostic visit cost?` (answered from the knowledge base, with the source)
+- `Do you install solar panels?` (the agent says it doesn't know and offers a person)
+- `I'm Esme Elderby, my number is 702 555 0105. Book me the earliest slot on Wednesday.`
+  (you will be asked to approve the booking, see step 10)
+
+Model: `OPENAI_TEXT_MODEL` in `.env` (default `gpt-4.1-mini`). At the end it prints how many
+model requests the call used.
+
+### 9c. Voice mode (Realtime speech-to-speech, needs your key)
+
+Install the audio extras once (Linux also needs PortAudio: `sudo apt install libportaudio2`):
+
+```bash
+pip install -e ".[voice]"
+voice-agent voice                  # talk through your microphone, hear the agent on your speakers
+```
+
+Wear headphones so the agent doesn't hear itself. Press Ctrl+C to hang up. The transcript is
+printed as you talk.
+
+No microphone? Type what the caller says and the agent still answers in **speech**, saved to a
+WAV file you can play:
+
+```bash
+voice-agent voice --type                              # audio saved to var/audio/last-call.wav
+voice-agent voice --type --save-audio my-call.wav --voice verse
+```
+
+Model: `OPENAI_REALTIME_MODEL` (default `gpt-realtime`; `gpt-realtime-mini` is cheaper). Voice
+mode needs a direct **WebSocket** connection to `api.openai.com`. Some company networks and
+proxies block that; text mode only needs normal HTTPS.
+
+### 9d. Logs
+
+Every call writes structured events (one JSON object per line) to `var/logs/sessions.jsonl`:
+caller turns, agent replies, tool calls and results (including which knowledge sources were
+used), approval requests and decisions, guardrail warnings, hand-offs and errors. Card numbers
+and anything that looks like an API key are redacted before they are written.
+
+## 10. Approve or reject actions (human-in-the-loop)
+
+Anything that changes data (creating or updating a lead, qualifying it, adding a note, booking
+or cancelling) **pauses** before it runs and asks you, in the same terminal:
+
+```
+========================================================================
+APPROVAL NEEDED (nothing has been done yet)
+  Action : Book slot S-20261202-0900 (Wed 02 Dec 09:00, Tech Avery (demo), open) for lead L-005 (Esme Elderby, status new)
+  Tool   : book_appointment  (books a technician's time for a customer)
+  Args   : {"lead_id": "L-005", "slot_id": "S-20261202-0900"}
+========================================================================
+Approve? [y = approve / anything else = reject]:
+```
+
+- Type `y` to **approve**: exactly the arguments shown are run, once.
+- Type anything else to **reject**, then optionally give a reason. The action does not run; the
+  agent tells the caller it couldn't be done and offers a call back.
+- No answer within 120 seconds counts as a rejection. So does any error in the approval step
+  (it "fails closed").
+- If the caller said something that looked like an attempt to manipulate the agent earlier in
+  the call, a `WARNING:` line is shown with the request.
+- To try the agent without changing any data, start it with `--auto-reject`
+  (`voice-agent text --auto-reject`). There is deliberately no auto-approve option.
+
+Every request and decision is logged. To review them:
+
+```bash
+voice-agent approvals              # your calls
+voice-agent approvals --demo       # the demo calls: 5 approved, 1 rejected, 1 pending
+```
+
+"Pending" means the call ended (for example the caller hung up) before anyone decided, so the
+action never ran.
 
 ## 11. View the dashboard *(coming in Task 5)*
 
@@ -226,6 +319,11 @@ Keep everything fictional: no real names, phone numbers or companies.
 | `Address already in use` when starting the HTTP server | Another server is on port 8765; add `--port 8766` |
 | `The openai index cannot be used … Run: voice-agent ingest --provider openai` | Build the OpenAI index first (step 8a), or set `EMBEDDINGS_PROVIDER=local` |
 | `EMBEDDINGS_PROVIDER is 'openai' but OPENAI_API_KEY is not set` | Add your key to `.env`, or switch to `EMBEDDINGS_PROVIDER=local` |
+| `Could not connect to the OpenAI Realtime API (… HTTP 405 …)` | Your network or proxy blocks WebSockets. Try another network, or use `voice-agent text` |
+| `Microphone mode needs the optional audio packages` | `pip install -e ".[voice]"`; on Linux also `sudo apt install libportaudio2`; or use `voice-agent voice --type` |
+| The agent hears itself and interrupts | Use headphones |
+| An approval was rejected but I typed y | Only `y` or `yes` approves; check you answered within 120 seconds |
+| `voice-agent text` says `OPENAI_API_KEY is not set` | Add your key to `.env` (step 5), or run `voice-agent demo`, which needs no key |
 | `ask` says "I don't know" for a question the documents do cover | The wording is far from the document's. Rephrase, use OpenAI embeddings, or add the caller's wording to the document |
 | `pip` errors about Python version | Check `python --version` is 3.11 or newer |
 
