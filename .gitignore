@@ -1,2 +1,28 @@
-.venv/
+# Secrets: never commit real keys. Only .env.example is tracked.
 .env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Runtime output (generated locally, never committed)
+var/
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
