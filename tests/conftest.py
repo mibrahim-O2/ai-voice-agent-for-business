@@ -35,3 +35,23 @@ def clean_env(monkeypatch):
     ):
         monkeypatch.delenv(var, raising=False)
     return monkeypatch
+
+
+# ---------- business layer fixtures ----------
+FIXED_NOW = __import__("datetime").datetime(2026, 11, 20, 10, 0)
+
+
+@pytest.fixture
+def store(tmp_path):
+    """A DataStore on a temporary working copy, with the clock fixed before the demo calendar."""
+    from voice_agent.business import DataStore
+    from voice_agent.config import DATA_DIR
+
+    return DataStore(DATA_DIR, tmp_path / "var", clock=lambda: FIXED_NOW)
+
+
+@pytest.fixture
+def service(store):
+    from voice_agent.business import BusinessService
+
+    return BusinessService(store)

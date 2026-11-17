@@ -11,6 +11,8 @@ import re
 import unicodedata
 from datetime import date, timedelta
 
+from pydantic import ValidationError
+
 from ..data_models import FICTIONAL_PHONE_RE, Appointment, Lead, LeadStatus, LeadTier, Note
 from .errors import Conflict, InvalidInput, NotFound
 from .qualification import SERVICES, TIMELINES, score_lead
@@ -270,8 +272,9 @@ class BusinessService:
             data = {**lead.model_dump(), **changes}
             try:
                 updated = Lead.model_validate(data)
-            except ValueError as exc:
-                raise InvalidInput(str(exc).splitlines()[-1].strip()) from exc
+            except ValidationError as exc:
+                messages = "; ".join(e["msg"].removeprefix("Value error, ") for e in exc.errors())
+                raise InvalidInput(messages) from exc
             self.store.save_leads(self._replace_lead(leads, updated))
         return {"updated": True, "changed_fields": sorted(changes), "lead": updated.model_dump(mode="json")}
 
