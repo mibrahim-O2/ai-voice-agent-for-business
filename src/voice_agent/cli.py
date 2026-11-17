@@ -1,6 +1,7 @@
 """Command-line entry point: `voice-agent <command>`.
 
-Commands: version, validate-data, tools, reset-data, mcp. Later tasks add ingest, text and voice.
+Commands: version, validate-data, tools, reset-data, mcp, ingest, ask, rag-eval.
+Task 4 adds text and voice.
 """
 
 from __future__ import annotations
@@ -77,6 +78,81 @@ def _mcp(transport: str, host: str, port: int, allow_remote: bool = False) -> in
     return 0
 
 
+def _open_kb(provider: str | None):
+    from .config import load_settings
+    from .rag import KnowledgeBase
+
+    settings = load_settings()
+    provider = provider or settings.embeddings_provider
+    kb = KnowledgeBase.open(
+        settings.data_dir / "knowledge",
+        settings.var_dir / "index",
+        provider=provider,
+        api_key=settings.openai_api_key if provider == "openai" else None,
+    )
+    return settings, provider, kb
+
+
+def _ingest(provider: str | None) -> int:
+    from .config import ConfigError, load_settings
+    from .rag import VectorIndex, make_embedder
+    from .rag.documents import DocumentError
+
+    settings = load_settings()
+    provider = provider or settings.embeddings_provider
+    try:
+        api_key = settings.require_openai_key() if provider == "openai" else None
+        embedder = make_embedder(provider, api_key=api_key)
+        index = VectorIndex.build(settings.data_dir / "knowledge", embedder)
+    except (ConfigError, DocumentError) as exc:
+        print(f"Ingest failed: {exc}", file=sys.stderr)
+        return 1
+    directory = settings.var_dir / "index" / provider
+    index.save(directory)
+    print(f"Indexed {len(index.source_hashes)} documents as {len(index.chunks)} chunks with {embedder.name}")
+    if provider == "openai":
+        print(f"OpenAI embedding requests made: {embedder.calls}")
+    print(f"Saved to {directory}")
+    return 0
+
+
+def _ask(question: str, provider: str | None, k: int) -> int:
+    from .rag import KnowledgeBaseError
+
+    try:
+        _, provider, kb = _open_kb(provider)
+        result = kb.search(question, k=k)
+    except (KnowledgeBaseError, ValueError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    if not result["found"]:
+        print(
+            f"I don't know: nothing relevant in the knowledge base (best score {result['best_score']}, "
+            f"needs {result['min_score']})."
+        )
+        return 0
+    for n, p in enumerate(result["passages"], start=1):
+        print(f"[{n}] {p['title']} > {p['section']}  (source: {p['source']}, score {p['score']})")
+        print("    " + p["text"].replace("\n", "\n    "))
+    return 0
+
+
+def _rag_eval(provider: str | None) -> int:
+    from .rag import KnowledgeBaseError
+    from .rag.evaluation import evaluate, load_eval_set
+
+    try:
+        settings, provider, kb = _open_kb(provider)
+    except KnowledgeBaseError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    report = evaluate(kb, load_eval_set(settings.data_dir / "rag_eval.json"))
+    print(f"[{provider}, min_score {kb.min_score}] {report.summary()}")
+    for failure in report.failures:
+        print(f"  - {failure}")
+    return 0 if report.refusal_rate == 1.0 else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="voice-agent", description="AI voice agent (demo data only)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -91,6 +167,14 @@ def main(argv: list[str] | None = None) -> int:
     mcp.add_argument(
         "--allow-remote", action="store_true", help="HTTP only; allow a non-loopback host (no built-in auth)"
     )
+    ingest = sub.add_parser("ingest", help="build the knowledge-base index (RAG)")
+    ingest.add_argument("--provider", choices=["local", "openai"], help="default: EMBEDDINGS_PROVIDER")
+    ask = sub.add_parser("ask", help="search the knowledge base and print passages with sources")
+    ask.add_argument("question")
+    ask.add_argument("--provider", choices=["local", "openai"])
+    ask.add_argument("-k", type=int, default=3, help="passages to return (1-5)")
+    rag_eval = sub.add_parser("rag-eval", help="measure retrieval on data/rag_eval.json")
+    rag_eval.add_argument("--provider", choices=["local", "openai"])
     args = parser.parse_args(argv)
 
     if args.command == "version":
@@ -104,6 +188,12 @@ def main(argv: list[str] | None = None) -> int:
         return _reset_data()
     if args.command == "mcp":
         return _mcp(args.transport, args.host, args.port, args.allow_remote)
+    if args.command == "ingest":
+        return _ingest(args.provider)
+    if args.command == "ask":
+        return _ask(args.question, args.provider, args.k)
+    if args.command == "rag-eval":
+        return _rag_eval(args.provider)
     parser.error(f"unknown command {args.command}")  # pragma: no cover
     return 2  # pragma: no cover
 

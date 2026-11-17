@@ -177,7 +177,11 @@ class LocalEmbedder:
 
 class OpenAIEmbedder:
     name = "openai-text-embedding-3-small"
-    default_min_score = 0.35
+    # Calibrated live on data/rag_eval.json (2026-11): out-of-scope questions scored <= 0.366
+    # ("Do you repair cars?"), answerable ones >= 0.364, all but one >= 0.395. Semantic embeddings
+    # place "repair cars" close to "repairs", so the threshold is only a first filter: the agent's
+    # instructions also require it to check that a passage actually answers the question.
+    default_min_score = 0.38
     model = "text-embedding-3-small"
     batch_size = 96
 
