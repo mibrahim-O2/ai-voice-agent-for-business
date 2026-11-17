@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-voice-agent"
+version = "0.1.0"
+description = "AI voice agent for business with MCP tools, RAG and human-in-the-loop approvals (demo data only)."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Muhammad Ibrahim" }]
+dependencies = [
+    "openai-agents>=0.24,<0.25",
+    "mcp>=1.10,<3",
+    "numpy>=1.26",
+    "pydantic>=2.7,<3",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+voice-agent = "voice_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+# Tests and scripts run fixed `git` commands (no shell, no user input).
+"tests/**" = ["S101", "S603", "S607"]
+"scripts/**" = ["S311", "S603", "S607"]

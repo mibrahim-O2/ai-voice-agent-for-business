@@ -1,0 +1,67 @@
+"""The secret scanner catches real-looking keys, the repo is clean, and the CLI works."""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+
+import pytest
+
+from conftest import ROOT, load_script
+from voice_agent import __version__
+from voice_agent.cli import main
+
+scanner = load_script("check_secrets")
+
+FAKE_OPENAI = "sk-proj-" + "A1b2C3d4E5f6G7h8I9j0K1l2"  # built at runtime so this file stays clean
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        f"key = {FAKE_OPENAI}",
+        "OPENAI_API_KEY=" + "abcdefghijklmnopqrstuvwx",
+        "token ghp_" + "a" * 36,
+        "Authorization: Bearer " + "x" * 30,
+        "-----BEGIN RSA " + "PRIVATE KEY-----",
+    ],
+)
+def test_scanner_flags_secrets(text):
+    assert scanner.scan_text(text)
+
+
+@pytest.mark.parametrize("text", ["OPENAI_API_KEY=", "skip-this-line", "OPENAI_API_KEY=your-key-here"])
+def test_scanner_ignores_placeholders(text):
+    assert scanner.scan_text(text) == []
+
+
+def test_scanner_rejects_env_files():
+    problems = scanner.find_problems([(".env", "X=1"), ("config/.env.local", ""), (".env.example", "")])
+    assert len(problems) == 2
+
+
+def test_repository_contains_no_secrets():
+    assert scanner.main([]) == 0
+
+
+def test_env_file_is_ignored_by_git():
+    result = subprocess.run(["git", "check-ignore", ".env"], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, ".env must be listed in .gitignore"
+
+
+def test_cli_version(capsys):
+    assert main(["version"]) == 0
+    assert capsys.readouterr().out.strip() == __version__
+
+
+def test_cli_validate_data(capsys):
+    assert main(["validate-data"]) == 0
+    assert "OK: all dummy data is valid" in capsys.readouterr().out
+
+
+def test_cli_runs_as_module():
+    result = subprocess.run(
+        [sys.executable, "-m", "voice_agent.cli", "version"], capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == __version__

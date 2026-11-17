@@ -1,0 +1,531 @@
+{
+  "timezone": "America/Chicago",
+  "slot_minutes": 60,
+  "business_days": [
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri"
+  ],
+  "start_date": "2026-12-01",
+  "end_date": "2026-12-14",
+  "slots": [
+    {
+      "id": "S-20261201-0900",
+      "start": "2026-12-01T09:00:00",
+      "end": "2026-12-01T10:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261201-1000",
+      "start": "2026-12-01T10:00:00",
+      "end": "2026-12-01T11:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261201-1100",
+      "start": "2026-12-01T11:00:00",
+      "end": "2026-12-01T12:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261201-1300",
+      "start": "2026-12-01T13:00:00",
+      "end": "2026-12-01T14:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261201-1400",
+      "start": "2026-12-01T14:00:00",
+      "end": "2026-12-01T15:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261201-1500",
+      "start": "2026-12-01T15:00:00",
+      "end": "2026-12-01T16:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261201-1600",
+      "start": "2026-12-01T16:00:00",
+      "end": "2026-12-01T17:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261202-0900",
+      "start": "2026-12-02T09:00:00",
+      "end": "2026-12-02T10:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261202-1000",
+      "start": "2026-12-02T10:00:00",
+      "end": "2026-12-02T11:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261202-1100",
+      "start": "2026-12-02T11:00:00",
+      "end": "2026-12-02T12:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261202-1300",
+      "start": "2026-12-02T13:00:00",
+      "end": "2026-12-02T14:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261202-1400",
+      "start": "2026-12-02T14:00:00",
+      "end": "2026-12-02T15:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261202-1500",
+      "start": "2026-12-02T15:00:00",
+      "end": "2026-12-02T16:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261202-1600",
+      "start": "2026-12-02T16:00:00",
+      "end": "2026-12-02T17:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261203-0900",
+      "start": "2026-12-03T09:00:00",
+      "end": "2026-12-03T10:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261203-1000",
+      "start": "2026-12-03T10:00:00",
+      "end": "2026-12-03T11:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261203-1100",
+      "start": "2026-12-03T11:00:00",
+      "end": "2026-12-03T12:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261203-1300",
+      "start": "2026-12-03T13:00:00",
+      "end": "2026-12-03T14:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261203-1400",
+      "start": "2026-12-03T14:00:00",
+      "end": "2026-12-03T15:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261203-1500",
+      "start": "2026-12-03T15:00:00",
+      "end": "2026-12-03T16:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261203-1600",
+      "start": "2026-12-03T16:00:00",
+      "end": "2026-12-03T17:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261204-0900",
+      "start": "2026-12-04T09:00:00",
+      "end": "2026-12-04T10:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261204-1000",
+      "start": "2026-12-04T10:00:00",
+      "end": "2026-12-04T11:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261204-1100",
+      "start": "2026-12-04T11:00:00",
+      "end": "2026-12-04T12:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261204-1300",
+      "start": "2026-12-04T13:00:00",
+      "end": "2026-12-04T14:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261204-1400",
+      "start": "2026-12-04T14:00:00",
+      "end": "2026-12-04T15:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261204-1500",
+      "start": "2026-12-04T15:00:00",
+      "end": "2026-12-04T16:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261204-1600",
+      "start": "2026-12-04T16:00:00",
+      "end": "2026-12-04T17:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261207-0900",
+      "start": "2026-12-07T09:00:00",
+      "end": "2026-12-07T10:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261207-1000",
+      "start": "2026-12-07T10:00:00",
+      "end": "2026-12-07T11:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261207-1100",
+      "start": "2026-12-07T11:00:00",
+      "end": "2026-12-07T12:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261207-1300",
+      "start": "2026-12-07T13:00:00",
+      "end": "2026-12-07T14:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261207-1400",
+      "start": "2026-12-07T14:00:00",
+      "end": "2026-12-07T15:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261207-1500",
+      "start": "2026-12-07T15:00:00",
+      "end": "2026-12-07T16:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261207-1600",
+      "start": "2026-12-07T16:00:00",
+      "end": "2026-12-07T17:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261208-0900",
+      "start": "2026-12-08T09:00:00",
+      "end": "2026-12-08T10:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261208-1000",
+      "start": "2026-12-08T10:00:00",
+      "end": "2026-12-08T11:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261208-1100",
+      "start": "2026-12-08T11:00:00",
+      "end": "2026-12-08T12:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261208-1300",
+      "start": "2026-12-08T13:00:00",
+      "end": "2026-12-08T14:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261208-1400",
+      "start": "2026-12-08T14:00:00",
+      "end": "2026-12-08T15:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261208-1500",
+      "start": "2026-12-08T15:00:00",
+      "end": "2026-12-08T16:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261208-1600",
+      "start": "2026-12-08T16:00:00",
+      "end": "2026-12-08T17:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261209-0900",
+      "start": "2026-12-09T09:00:00",
+      "end": "2026-12-09T10:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261209-1000",
+      "start": "2026-12-09T10:00:00",
+      "end": "2026-12-09T11:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261209-1100",
+      "start": "2026-12-09T11:00:00",
+      "end": "2026-12-09T12:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261209-1300",
+      "start": "2026-12-09T13:00:00",
+      "end": "2026-12-09T14:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261209-1400",
+      "start": "2026-12-09T14:00:00",
+      "end": "2026-12-09T15:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261209-1500",
+      "start": "2026-12-09T15:00:00",
+      "end": "2026-12-09T16:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261209-1600",
+      "start": "2026-12-09T16:00:00",
+      "end": "2026-12-09T17:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261210-0900",
+      "start": "2026-12-10T09:00:00",
+      "end": "2026-12-10T10:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261210-1000",
+      "start": "2026-12-10T10:00:00",
+      "end": "2026-12-10T11:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261210-1100",
+      "start": "2026-12-10T11:00:00",
+      "end": "2026-12-10T12:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261210-1300",
+      "start": "2026-12-10T13:00:00",
+      "end": "2026-12-10T14:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261210-1400",
+      "start": "2026-12-10T14:00:00",
+      "end": "2026-12-10T15:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261210-1500",
+      "start": "2026-12-10T15:00:00",
+      "end": "2026-12-10T16:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261210-1600",
+      "start": "2026-12-10T16:00:00",
+      "end": "2026-12-10T17:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261211-0900",
+      "start": "2026-12-11T09:00:00",
+      "end": "2026-12-11T10:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261211-1000",
+      "start": "2026-12-11T10:00:00",
+      "end": "2026-12-11T11:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261211-1100",
+      "start": "2026-12-11T11:00:00",
+      "end": "2026-12-11T12:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261211-1300",
+      "start": "2026-12-11T13:00:00",
+      "end": "2026-12-11T14:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261211-1400",
+      "start": "2026-12-11T14:00:00",
+      "end": "2026-12-11T15:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261211-1500",
+      "start": "2026-12-11T15:00:00",
+      "end": "2026-12-11T16:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261211-1600",
+      "start": "2026-12-11T16:00:00",
+      "end": "2026-12-11T17:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": false
+    },
+    {
+      "id": "S-20261214-0900",
+      "start": "2026-12-14T09:00:00",
+      "end": "2026-12-14T10:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261214-1000",
+      "start": "2026-12-14T10:00:00",
+      "end": "2026-12-14T11:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261214-1100",
+      "start": "2026-12-14T11:00:00",
+      "end": "2026-12-14T12:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261214-1300",
+      "start": "2026-12-14T13:00:00",
+      "end": "2026-12-14T14:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261214-1400",
+      "start": "2026-12-14T14:00:00",
+      "end": "2026-12-14T15:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261214-1500",
+      "start": "2026-12-14T15:00:00",
+      "end": "2026-12-14T16:00:00",
+      "staff": "Tech Jordan (demo)",
+      "available": true
+    },
+    {
+      "id": "S-20261214-1600",
+      "start": "2026-12-14T16:00:00",
+      "end": "2026-12-14T17:00:00",
+      "staff": "Tech Avery (demo)",
+      "available": true
+    }
+  ],
+  "appointments": [
+    {
+      "id": "A-001",
+      "lead_id": "L-003",
+      "slot_id": "S-20261201-1300",
+      "service": "Plumbing repair",
+      "status": "booked",
+      "created_at": "2026-11-03T13:00:00"
+    },
+    {
+      "id": "A-002",
+      "lead_id": "L-004",
+      "slot_id": "S-20261203-1400",
+      "service": "Water heater installation",
+      "status": "booked",
+      "created_at": "2026-11-04T15:00:00"
+    },
+    {
+      "id": "A-003",
+      "lead_id": "L-009",
+      "slot_id": "S-20261208-1400",
+      "service": "Furnace installation",
+      "status": "booked",
+      "created_at": "2026-11-09T17:00:00"
+    }
+  ]
+}
