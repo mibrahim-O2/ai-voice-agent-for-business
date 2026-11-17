@@ -49,8 +49,8 @@ def load_eval_set(path: Path) -> list[dict]:
 
 def evaluate(kb: KnowledgeBase, questions: list[dict], k: int = 3) -> EvalReport:
     report = EvalReport()
-    for item in questions:
-        result = kb.search(item["q"], k=k)
+    results = kb.search_many([item["q"] for item in questions], k=k)  # one embedding batch
+    for item, result in zip(questions, results, strict=True):
         expected = set(item["expected"])
         sources = {p["source"] for p in result["passages"]}
         if expected:
