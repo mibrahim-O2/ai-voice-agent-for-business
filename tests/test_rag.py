@@ -250,3 +250,122 @@ def test_openai_provider_without_key_is_a_clear_error_not_a_crash(tmp_path):
         KnowledgeBase.open(KNOWLEDGE, tmp_path, provider="openai", api_key=None)
     with pytest.raises(KnowledgeBaseError, match="unknown embeddings provider"):
         KnowledgeBase.open(KNOWLEDGE, tmp_path, provider="pinecone")
+
+
+# ---------- review fixes ----------
+@pytest.mark.parametrize(
+    "manifest",
+    [
+        [],  # valid JSON, wrong type
+        {"format_version": 1, "embedder": "local-tfidf-v1"},  # missing keys
+        {
+            "format_version": 1,
+            "embedder": "local-tfidf-v1",
+            "embedder_state": {"dim": 4},
+            "chunks": [],
+            "source_hashes": {},
+        },  # bad embedder state
+        {
+            "format_version": 1,
+            "embedder": "local-tfidf-v1",
+            "embedder_state": {"dim": 4, "max_idf": 1.0, "idf": {}},
+            "chunks": [{"unexpected": 1}],
+            "source_hashes": {},
+        },  # bad chunk shape
+    ],
+)
+def test_malformed_manifests_are_rebuilt_not_crashes(tmp_path, manifest):
+    KnowledgeBase.open(KNOWLEDGE, tmp_path)
+    (tmp_path / "local" / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(IndexError_):
+        VectorIndex.load(tmp_path / "local", LocalEmbedder())
+    assert KnowledgeBase.open(KNOWLEDGE, tmp_path).search("business hours")["found"]
+
+
+def test_a_malformed_document_is_a_knowledge_base_error(tmp_path):
+    (tmp_path / "bad.md").write_text("no front matter")
+    with pytest.raises(KnowledgeBaseError, match="knowledge document is invalid"):
+        KnowledgeBase.open(tmp_path, tmp_path / "index")
+
+
+class FailingClient:
+    """Simulates OpenAI's 401, whose message contains a partly masked key."""
+
+    def __init__(self):
+        self.embeddings = SimpleNamespace(create=self.create)
+
+    def create(self, model, input):  # noqa: A002
+        error = Exception("Incorrect API key provided: sk-proj-" + "abcd" + "****" + "wxyz. You can find...")
+        error.status_code = 401
+        raise error
+
+
+def test_api_errors_are_sanitised():
+    from voice_agent.rag import EmbeddingError
+
+    with pytest.raises(EmbeddingError) as info:
+        OpenAIEmbedder(client=FailingClient()).embed(["hello"])
+    message = str(info.value)
+    assert "sk-" not in message and "abcd" not in message and "Incorrect API key" not in message
+    assert "HTTP 401" in message and "Check OPENAI_API_KEY" in message
+    assert info.value.__cause__ is None and info.value.__suppress_context__  # nothing chained into logs
+
+
+def test_eval_set_is_embedded_in_one_request(tmp_path):
+    client = FakeEmbeddingsClient()
+    VectorIndex.build(KNOWLEDGE, OpenAIEmbedder(client=client)).save(tmp_path / "openai")
+    client.requests.clear()
+    kb = KnowledgeBase.open(KNOWLEDGE, tmp_path, provider="openai", embedder=OpenAIEmbedder(client=client))
+    questions = load_eval_set(DATA_DIR / "rag_eval.json")
+    evaluate(kb, questions)
+    assert len(client.requests) == 1 and len(client.requests[0][1]) == len(questions)
+
+
+def test_search_many_matches_single_searches(kb):
+    questions = ["Do you accept cash?", "Do you install solar panels?"]
+    assert kb.search_many(questions) == [kb.search(q) for q in questions]
+
+
+def _copy_knowledge(target):
+    target.mkdir()
+    for path in KNOWLEDGE.glob("*.md"):
+        (target / path.name).write_text(path.read_text())
+    return target
+
+
+def test_running_local_knowledge_base_picks_up_edited_documents(tmp_path):
+    knowledge = _copy_knowledge(tmp_path / "kb")
+    kb = KnowledgeBase.open(knowledge, tmp_path / "index", recheck_seconds=0)
+    question = "What time does the office close on weekdays?"
+    assert "6:00 PM" in kb.search(question, k=1)["passages"][0]["text"]
+    hours = knowledge / "02-business-hours.md"
+    hours.write_text(hours.read_text().replace("8:00 AM to 6:00 PM", "8:00 AM to 7:00 PM"))
+    result = kb.search(question, k=1)
+    assert "7:00 PM" in result["passages"][0]["text"] and result["index_stale"] is False
+
+
+def test_running_openai_knowledge_base_flags_staleness_without_api_calls(tmp_path):
+    knowledge = _copy_knowledge(tmp_path / "kb")
+    client = FakeEmbeddingsClient()
+    VectorIndex.build(knowledge, OpenAIEmbedder(client=client)).save(tmp_path / "index" / "openai")
+    kb = KnowledgeBase.open(
+        knowledge,
+        tmp_path / "index",
+        provider="openai",
+        embedder=OpenAIEmbedder(client=client),
+        recheck_seconds=0,
+    )
+    assert kb.search("hours")["index_stale"] is False
+    (knowledge / "02-business-hours.md").write_text("---\ntitle: Business hours\n---\nChanged.\n")
+    client.requests.clear()
+    result = kb.search("hours")
+    assert result["index_stale"] is True and "voice-agent ingest --provider openai" in result["stale_note"]
+    assert len(client.requests) == 1  # only the query embedding; no implicit re-ingest
+
+
+def test_a_broken_document_mid_edit_keeps_the_last_good_index(tmp_path):
+    knowledge = _copy_knowledge(tmp_path / "kb")
+    kb = KnowledgeBase.open(knowledge, tmp_path / "index", recheck_seconds=0)
+    (knowledge / "02-business-hours.md").write_text("half-saved file without front matter")
+    result = kb.search("What time does the office close on weekdays?", k=1)
+    assert result["found"] and result["index_stale"] is True

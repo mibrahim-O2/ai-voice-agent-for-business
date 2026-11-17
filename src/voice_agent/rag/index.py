@@ -79,15 +79,23 @@ class VectorIndex:
             vectors = np.load(vectors_path, allow_pickle=False)
         except (OSError, ValueError) as exc:
             raise IndexError_(f"index in {directory} is unreadable: {exc}") from exc
+        if not isinstance(manifest, dict):
+            raise IndexError_(f"index in {directory} is malformed; rebuild it")
         if manifest.get("format_version") != FORMAT_VERSION:
             raise IndexError_("index format has changed; rebuild it")
         if manifest.get("embedder") != embedder.name:
             raise IndexError_(f"index was built with {manifest.get('embedder')}, not {embedder.name}")
-        embedder.load_state(manifest["embedder_state"])
-        chunks = [Chunk(**c) for c in manifest["chunks"]]
-        if vectors.shape[0] != len(chunks):
+        try:
+            embedder.load_state(manifest["embedder_state"])
+            chunks = [Chunk(**c) for c in manifest["chunks"]]
+            source_hashes = dict(manifest["source_hashes"])
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            raise IndexError_(
+                f"index in {directory} is malformed ({type(exc).__name__}); rebuild it"
+            ) from exc
+        if vectors.ndim != 2 or vectors.shape[0] != len(chunks):
             raise IndexError_("index vectors and chunks do not match; rebuild it")
-        return cls(embedder, chunks, vectors, manifest["source_hashes"], manifest.get("built_at", ""))
+        return cls(embedder, chunks, vectors, source_hashes, str(manifest.get("built_at", "")))
 
     def is_stale(self, knowledge_dir: Path) -> bool:
         current = {d.source: d.sha256 for d in load_documents(knowledge_dir)}
@@ -95,12 +103,19 @@ class VectorIndex:
 
     # ---------- search ----------
     def search(self, query: str, k: int) -> list[tuple[Chunk, float]]:
+        return self.search_many([query], k)[0]
+
+    def search_many(self, queries: list[str], k: int) -> list[list[tuple[Chunk, float]]]:
+        """Embed all queries in one batch (one API request for OpenAI) and rank chunks for each."""
         if not self.chunks:
-            return []
-        q = self.embedder.embed([query])[0]
-        scores = self.vectors @ q
-        order = np.argsort(-scores, kind="stable")[:k]
-        return [(self.chunks[i], float(scores[i])) for i in order]
+            return [[] for _ in queries]
+        query_vectors = self.embedder.embed(queries)
+        results = []
+        for q in query_vectors:
+            scores = self.vectors @ q
+            order = np.argsort(-scores, kind="stable")[:k]
+            results.append([(self.chunks[i], float(scores[i])) for i in order])
+        return results
 
 
 def _npy_bytes(array: np.ndarray) -> bytes:
