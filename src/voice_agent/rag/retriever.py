@@ -67,7 +67,16 @@ class KnowledgeBase:
         min_score: float | None = None,
     ) -> KnowledgeBase:
         """Load the index for `provider`; build or rebuild the local one if missing or stale."""
-        embedder = embedder or make_embedder(provider, api_key=api_key)
+        if embedder is None:
+            if provider == "openai" and not api_key:
+                raise KnowledgeBaseError(
+                    "EMBEDDINGS_PROVIDER is 'openai' but OPENAI_API_KEY is not set. Add your key to "
+                    ".env, or set EMBEDDINGS_PROVIDER=local to use the offline knowledge base."
+                )
+            try:
+                embedder = make_embedder(provider, api_key=api_key)
+            except ValueError as exc:
+                raise KnowledgeBaseError(str(exc)) from exc
         directory = index_root / provider
         try:
             index = VectorIndex.load(directory, embedder)

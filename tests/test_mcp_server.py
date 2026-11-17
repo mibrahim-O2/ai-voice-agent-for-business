@@ -22,12 +22,22 @@ EXPECTED_TOOLS = {
     "list_available_slots",
     "book_appointment",
     "cancel_appointment",
+    "search_knowledge",
 }
+KNOWLEDGE_TOOLS = {"search_knowledge"}
+
+
+@pytest.fixture(scope="module")
+def kb(tmp_path_factory):
+    from voice_agent.config import DATA_DIR
+    from voice_agent.rag import KnowledgeBase
+
+    return KnowledgeBase.open(DATA_DIR / "knowledge", tmp_path_factory.mktemp("index"))
 
 
 @pytest.fixture
-def server(service):
-    return build_server(service)
+def server(service, kb):
+    return build_server(service, kb)
 
 
 def with_client(test):
@@ -64,7 +74,8 @@ def test_every_write_operation_is_sensitive():
         for name, _ in inspect.getmembers(BusinessService, inspect.isfunction)
         if not name.startswith("_")
     }
-    assert public_methods == EXPECTED_TOOLS == set(TOOL_POLICIES)
+    assert public_methods == EXPECTED_TOOLS - KNOWLEDGE_TOOLS
+    assert set(TOOL_POLICIES) == EXPECTED_TOOLS
     assert BusinessService.WRITE_OPERATIONS == SENSITIVE_TOOLS
     for name, policy in TOOL_POLICIES.items():
         assert policy.sensitive == (not policy.read_only), name
@@ -190,3 +201,51 @@ async def test_schema_enums_match_the_business_layer(client):
     assert enum_values(props["source"]) == SOURCES
     update_status = enum_values(tools["update_lead"].input_schema["properties"]["status"])
     assert "booked" not in update_status and "qualified" in update_status
+
+
+# ---------- knowledge base tool ----------
+@with_client
+async def test_search_knowledge_returns_passages_with_sources(client):
+    result = await call_ok(client, "search_knowledge", {"query": "What are your business hours?", "k": 2})
+    assert result["found"] is True
+    assert result["passages"][0]["source"] == "02-business-hours.md"
+    assert "Business hours" in result["sources"]
+
+
+@with_client
+async def test_search_knowledge_says_not_found_for_unknown_topics(client):
+    result = await call_ok(client, "search_knowledge", {"query": "Do you install solar panels?"})
+    assert result["found"] is False and result["passages"] == []
+    assert "Do not guess" in result["instruction"]
+
+
+@with_client
+async def test_search_knowledge_validation(client):
+    assert "k" in await call_err(client, "search_knowledge", {"query": "hours", "k": 50})
+    assert "query" in await call_err(client, "search_knowledge", {"query": ""})
+    assert "invalid_input" in await call_err(client, "search_knowledge", {"query": "   "})
+
+
+async def test_search_knowledge_reports_an_unavailable_index(service):
+    server = build_server(service, kb=None, kb_error="Run: voice-agent ingest --provider openai")
+    async with Client(server) as client:
+        message = await call_err(client, "search_knowledge", {"query": "hours"})
+    assert message.endswith("knowledge_unavailable: Run: voice-agent ingest --provider openai")
+
+
+async def test_stdio_server_starts_when_the_knowledge_base_is_unavailable(tmp_path):
+    """EMBEDDINGS_PROVIDER=openai with no key: CRM tools work, search_knowledge explains why it can't."""
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "voice_agent.cli", "mcp"],
+        env={
+            **os.environ,
+            "VOICE_AGENT_VAR_DIR": str(tmp_path),
+            "OPENAI_API_KEY": "",
+            "EMBEDDINGS_PROVIDER": "openai",
+        },
+    )
+    async with Client(params) as c:
+        assert not (await c.call_tool("get_lead", {"lead_id": "L-001"})).is_error
+        result = await c.call_tool("search_knowledge", {"query": "hours"})
+        assert result.is_error and "OPENAI_API_KEY is not set" in result.content[0].text

@@ -53,3 +53,14 @@ def test_relative_and_absolute_dirs(clean_env, tmp_path):
     settings = load_settings(tmp_path / "missing.env")
     assert settings.var_dir == PROJECT_ROOT / "custom-var"
     assert settings.data_dir == tmp_path
+
+
+def test_loading_settings_does_not_modify_the_process_environment(clean_env, tmp_path):
+    import os
+
+    env = tmp_path / ".env"
+    env.write_text(f"EMBEDDINGS_PROVIDER=openai\nLOG_LEVEL=DEBUG\nVOICE_AGENT_DATA_DIR={tmp_path}\n")
+    before = dict(os.environ)
+    settings = load_settings(env)
+    assert settings.embeddings_provider == "openai" and settings.data_dir == tmp_path
+    assert dict(os.environ) == before
