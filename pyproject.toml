@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 authors = [{ name = "Muhammad Ibrahim" }]
 dependencies = [
     "openai-agents>=0.24,<0.25",
-    "mcp>=1.10,<3",
+    "mcp>=2.3,<3",
     "numpy>=1.26",
     "pydantic>=2.7,<3",
     "python-dotenv>=1.0",
