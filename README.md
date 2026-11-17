@@ -16,7 +16,7 @@ no paid vector database.
 
 | Task | Scope | Status |
 |---|---|---|
-| 1. Foundation | Structure, dummy data, lint, tests, CI, docs skeleton | ✅ this PR |
+| 1. Foundation | Structure, dummy data, lint, tests, CI, docs skeleton | ✅ done |
 | 2. MCP server | CRM and calendar tools with validation and sensitivity flags | planned |
 | 3. RAG | Local ingest, embeddings, vector store, retrieval tool with "I don't know" rule | planned |
 | 4. Agent + HITL | Text and Realtime voice agent, approval gate, guardrails, structured logs | planned |

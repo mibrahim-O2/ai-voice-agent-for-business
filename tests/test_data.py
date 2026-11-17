@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from voice_agent.config import DATA_DIR
-from voice_agent.data_models import Lead, list_knowledge_files, load_calendar, load_leads
+from voice_agent.data_models import Calendar, Lead, list_knowledge_files, load_calendar, load_leads
 
 
 @pytest.fixture(scope="module")
@@ -84,7 +84,26 @@ def test_knowledge_base_has_8_to_10_short_documents():
         text = path.read_text(encoding="utf-8")
         assert text.startswith("---\ntitle: "), f"{path.name} needs front matter with a title"
         assert len(text.split()) < 400, f"{path.name} should be short"
-        assert "fictional" in text.lower() or path.name != "01-company-overview.md"
+
+
+def test_company_overview_says_the_company_is_fictional():
+    overview = next(p for p in list_knowledge_files() if p.name == "01-company-overview.md")
+    assert "fictional" in overview.read_text(encoding="utf-8").lower()
+
+
+def test_calendar_timezone_must_be_real(calendar):
+    assert calendar.tz.key == "America/Chicago"
+    with pytest.raises(ValidationError, match="unknown IANA timezone"):
+        Calendar.model_validate({**calendar.model_dump(mode="json"), "timezone": "America/Chicgo"})
+
+
+def test_loaders_honour_data_dir_override(tmp_path, monkeypatch):
+    (tmp_path / "knowledge").mkdir()
+    (tmp_path / "knowledge" / "only.md").write_text("---\ntitle: x\n---\n")
+    (tmp_path / "leads.json").write_text((DATA_DIR / "leads.json").read_text())
+    monkeypatch.setenv("VOICE_AGENT_DATA_DIR", str(tmp_path))
+    assert [p.name for p in list_knowledge_files()] == ["only.md"]
+    assert len(load_leads()) == 25
 
 
 def test_generator_is_deterministic(tmp_path, monkeypatch):
