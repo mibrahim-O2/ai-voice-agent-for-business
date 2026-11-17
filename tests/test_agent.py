@@ -77,6 +77,8 @@ def test_instructions_cover_the_guardrails():
         "reviewed by a human",
         "request_human",
         "Never ask for or accept payment card numbers",
+        "Never act for someone",
+        "belongs to the caller",
         "Friday 20 November 2026",
     ]:
         assert phrase in text, phrase

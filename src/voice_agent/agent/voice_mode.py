@@ -33,6 +33,10 @@ DEFAULT_VOICE = "alloy"
 TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
 
 
+class VoiceConnectionError(RuntimeError):
+    """The Realtime API could not be reached. The message never contains the API key."""
+
+
 class WavSink:
     """Writes the agent's audio to a 24 kHz mono 16-bit WAV file."""
 
@@ -122,8 +126,20 @@ class VoiceSession:
             },
         )
         model_config = {"api_key": self._api_key} if self._api_key else {}
-        self._session = await runner.run(context=self.context, model_config=model_config)
-        await self._session.__aenter__()
+        try:
+            self._session = await runner.run(context=self.context, model_config=model_config)
+            await self._session.__aenter__()
+        except Exception as exc:
+            # Don't leave the MCP subprocess running when the Realtime connection fails.
+            self.logger.log(
+                "error", where="realtime_connect", error=type(exc).__name__, detail=str(exc)[:200]
+            )
+            await self.mcp_server.cleanup()
+            raise VoiceConnectionError(
+                f"Could not connect to the OpenAI Realtime API ({type(exc).__name__}: {str(exc)[:200]}). "
+                "Voice mode needs a direct WebSocket connection to api.openai.com; networks or proxies "
+                "that block WebSockets prevent it. Text mode (voice-agent text) works over plain HTTPS."
+            ) from None
         self._pump = asyncio.create_task(self._pump_events())
         self.logger.log("session_start", model=self.settings.realtime_model, voice=self._voice)
         await self._say_greeting()

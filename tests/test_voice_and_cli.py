@@ -210,3 +210,38 @@ def test_redaction_rules():
     phone_and_slot = "call +1-312-555-0142 about S-20261202-0900"
     assert redact(phone_and_slot) == phone_and_slot  # ids and phone numbers are not cards
     assert redact("z" * 3000).endswith("[truncated 1000 chars]")
+
+
+# ---------- Realtime connection ----------
+async def test_realtime_session_is_configured_with_voice_transcription_and_all_tools(settings):
+    model = ScriptedRealtimeModel(strict=False)
+    async with VoiceSession(settings, ScriptedApprover([]), model=model, voice="verse"):
+        pass
+    config = model.connect_calls[0]["initial_model_settings"]
+    assert config["model_name"] == settings.realtime_model and config["voice"] == "verse"
+    assert config["input_audio_transcription"] == {"model": "gpt-4o-mini-transcribe"}
+    assert config["turn_detection"]["type"] == "semantic_vad"
+    tool_names = {t.name for t in config["tools"]}
+    assert {"search_knowledge", "book_appointment", "cancel_appointment", "request_human"} <= tool_names
+    assert "Never act for someone" in config["instructions"]
+
+
+async def test_realtime_connection_failure_is_clear_and_stops_the_mcp_server(settings):
+    from voice_agent.agent.core import build_mcp_server
+    from voice_agent.agent.voice_mode import VoiceConnectionError
+
+    mcp = build_mcp_server(settings)
+    cleanups = []
+    original_cleanup = mcp.cleanup
+
+    async def tracking_cleanup():
+        cleanups.append(1)
+        await original_cleanup()
+
+    mcp.cleanup = tracking_cleanup
+    model = ScriptedRealtimeModel(connect_error=OSError("server rejected WebSocket connection: HTTP 405"))
+    with pytest.raises(VoiceConnectionError, match="HTTP 405.*WebSocket") as info:
+        async with VoiceSession(settings, ScriptedApprover([]), model=model, mcp_server=mcp):
+            pass
+    assert cleanups == [1]
+    assert info.value.__cause__ is None
