@@ -17,7 +17,7 @@ no paid vector database.
 | Task | Scope | Status |
 |---|---|---|
 | 1. Foundation | Structure, dummy data, lint, tests, CI, docs skeleton | ✅ done |
-| 2. MCP server | CRM and calendar tools with validation and sensitivity flags | planned |
+| 2. MCP server | CRM and calendar tools with validation and sensitivity flags | ✅ done |
 | 3. RAG | Local ingest, embeddings, vector store, retrieval tool with "I don't know" rule | planned |
 | 4. Agent + HITL | Text and Realtime voice agent, approval gate, guardrails, structured logs | planned |
 | 5. Dashboard | Static GitHub Pages dashboard and deployment guides | planned |
@@ -33,6 +33,8 @@ pip install -e ".[dev]"
 cp .env.example .env               # then add your own OPENAI_API_KEY (optional for tests)
 
 voice-agent validate-data          # check the dummy data
+voice-agent tools                  # list MCP tools and which need human approval
+voice-agent mcp                    # run the MCP server (stdio); add --transport streamable-http for HTTP
 pytest                             # run the test suite (offline, no key needed)
 ```
 
@@ -41,7 +43,9 @@ Full beginner guide: [docs/01-user-workflow.md](docs/01-user-workflow.md).
 ## Project structure
 
 ```
-src/voice_agent/   Python package (settings, data schemas, CLI; more modules each task)
+src/voice_agent/   Python package
+  business/        demo CRM and calendar: JSON store, validation, lead scoring
+  mcp_server/      MCP server and the per-tool sensitivity policy
 data/              fictional leads, calendar and knowledge documents (see data/README.md)
 scripts/           dummy-data generator and secret scanner
 tests/             pytest suite (runs offline)

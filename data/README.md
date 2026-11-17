@@ -19,3 +19,6 @@ Rules the tests enforce:
 To move the calendar to new dates, run `python scripts/generate_dummy_data.py --start YYYY-MM-DD`.
 The test that checks the generator is deterministic compares against the default start date, so
 commit regenerated data only together with a matching change to `DEFAULT_START`.
+
+At runtime the MCP tools never modify these files. They work on a copy in
+`var/state/` (git-ignored); `voice-agent reset-data` restores it.
