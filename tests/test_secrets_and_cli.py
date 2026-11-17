@@ -112,3 +112,21 @@ def test_cli_ask_with_missing_openai_index(capsys, tmp_path, monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "placeholder-for-test")
     assert main(["ask", "hours", "--provider", "openai"]) == 1
     assert "voice-agent ingest --provider openai" in capsys.readouterr().err
+
+
+def test_cli_ingest_reports_api_failures_without_the_provider_message(capsys, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from voice_agent.rag import OpenAIEmbedder
+
+    def create(**_kwargs):
+        raise RuntimeError("provider text that must not be shown: sk-leak")
+
+    failing = OpenAIEmbedder(client=SimpleNamespace(embeddings=SimpleNamespace(create=create)))
+    monkeypatch.setenv("VOICE_AGENT_VAR_DIR", str(tmp_path))
+    monkeypatch.setenv("OPENAI_API_KEY", "placeholder-for-test")
+    monkeypatch.setattr("voice_agent.rag.make_embedder", lambda provider, api_key=None: failing)
+    assert main(["ingest", "--provider", "openai"]) == 1
+    err = capsys.readouterr().err
+    assert "Ingest failed: OpenAI embeddings request failed (RuntimeError)" in err
+    assert "sk-leak" not in err and "provider text" not in err

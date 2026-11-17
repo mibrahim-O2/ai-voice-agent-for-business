@@ -249,3 +249,22 @@ async def test_stdio_server_starts_when_the_knowledge_base_is_unavailable(tmp_pa
         assert not (await c.call_tool("get_lead", {"lead_id": "L-001"})).is_error
         result = await c.call_tool("search_knowledge", {"query": "hours"})
         assert result.is_error and "OPENAI_API_KEY is not set" in result.content[0].text
+
+
+async def test_search_knowledge_api_failure_is_reported_safely(service, tmp_path):
+    from types import SimpleNamespace
+
+    from voice_agent.config import DATA_DIR
+    from voice_agent.rag import KnowledgeBase, LocalEmbedder, VectorIndex
+
+    kb = KnowledgeBase(VectorIndex.build(DATA_DIR / "knowledge", LocalEmbedder()))
+
+    def failing_embed(texts):
+        from voice_agent.rag import EmbeddingError
+
+        raise EmbeddingError("OpenAI embeddings request failed (AuthenticationError, HTTP 401).")
+
+    kb.index.embedder = SimpleNamespace(embed=failing_embed, default_min_score=0.1)
+    async with Client(build_server(service, kb)) as client:
+        message = await call_err(client, "search_knowledge", {"query": "hours"})
+    assert "knowledge_unavailable" in message and "HTTP 401" in message

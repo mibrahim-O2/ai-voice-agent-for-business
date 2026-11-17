@@ -24,7 +24,7 @@ from ..business.qualification import SERVICES, TIMELINES
 from ..business.services import SOURCES
 from ..config import Settings, load_settings
 from ..data_models import LeadStatus, LeadTier
-from ..rag import KnowledgeBase, KnowledgeBaseError
+from ..rag import EmbeddingError, KnowledgeBase, KnowledgeBaseError
 from .tools import TOOL_POLICIES
 
 # Enum types are built from the business layer's tuples, so the MCP schema and the business
@@ -97,6 +97,8 @@ def build_server(
             raise ToolError(f"knowledge_unavailable: {kb_error or 'the knowledge base is not loaded'}")
         try:
             return kb.search(query, k=k)
+        except EmbeddingError as exc:  # message is already sanitised (no provider text)
+            raise ToolError(f"knowledge_unavailable: {exc}") from None
         except ValueError as exc:
             raise InvalidInput(str(exc)) from exc
 

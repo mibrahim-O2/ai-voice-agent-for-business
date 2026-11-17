@@ -105,6 +105,11 @@ def _normalise(matrix: np.ndarray) -> np.ndarray:
     return (matrix / norms).astype(np.float32)
 
 
+class EmbeddingError(RuntimeError):
+    """An embedding request failed. The message never includes the provider's error text, which
+    can contain a partly masked API key."""
+
+
 class Embedder(Protocol):
     name: str
     #: Minimum cosine similarity for a passage to count as relevant (calibrated per embedder).
@@ -200,8 +205,15 @@ class OpenAIEmbedder:
         rows: list[list[float]] = []
         for start in range(0, len(texts), self.batch_size):
             batch = [t.replace("\n", " ") for t in texts[start : start + self.batch_size]]
-            response = self.client.embeddings.create(model=self.model, input=batch)
             self.calls += 1
+            try:
+                response = self.client.embeddings.create(model=self.model, input=batch)
+            except Exception as exc:  # noqa: BLE001 - any client failure becomes one safe error
+                status = getattr(exc, "status_code", None)
+                detail = f"{type(exc).__name__}" + (f", HTTP {status}" if status else "")
+                hint = " Check OPENAI_API_KEY." if status in (401, 403) else ""
+                # `from None`: the original exception (and its message) must not be chained into logs
+                raise EmbeddingError(f"OpenAI embeddings request failed ({detail}).{hint}") from None
             rows.extend(item.embedding for item in sorted(response.data, key=lambda d: d.index))
         return _normalise(np.asarray(rows, dtype=np.float64))
 

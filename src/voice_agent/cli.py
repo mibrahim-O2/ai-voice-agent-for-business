@@ -95,7 +95,7 @@ def _open_kb(provider: str | None):
 
 def _ingest(provider: str | None) -> int:
     from .config import ConfigError, load_settings
-    from .rag import VectorIndex, make_embedder
+    from .rag import EmbeddingError, VectorIndex, make_embedder
     from .rag.documents import DocumentError
 
     settings = load_settings()
@@ -104,7 +104,7 @@ def _ingest(provider: str | None) -> int:
         api_key = settings.require_openai_key() if provider == "openai" else None
         embedder = make_embedder(provider, api_key=api_key)
         index = VectorIndex.build(settings.data_dir / "knowledge", embedder)
-    except (ConfigError, DocumentError) as exc:
+    except (ConfigError, DocumentError, EmbeddingError) as exc:
         print(f"Ingest failed: {exc}", file=sys.stderr)
         return 1
     directory = settings.var_dir / "index" / provider
@@ -117,14 +117,16 @@ def _ingest(provider: str | None) -> int:
 
 
 def _ask(question: str, provider: str | None, k: int) -> int:
-    from .rag import KnowledgeBaseError
+    from .rag import EmbeddingError, KnowledgeBaseError
 
     try:
         _, provider, kb = _open_kb(provider)
         result = kb.search(question, k=k)
-    except (KnowledgeBaseError, ValueError) as exc:
+    except (KnowledgeBaseError, EmbeddingError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+    if result.get("index_stale"):
+        print(f"Warning: {result['stale_note']}", file=sys.stderr)
     if not result["found"]:
         print(
             f"I don't know: nothing relevant in the knowledge base (best score {result['best_score']}, "
@@ -138,15 +140,15 @@ def _ask(question: str, provider: str | None, k: int) -> int:
 
 
 def _rag_eval(provider: str | None) -> int:
-    from .rag import KnowledgeBaseError
+    from .rag import EmbeddingError, KnowledgeBaseError
     from .rag.evaluation import evaluate, load_eval_set
 
     try:
         settings, provider, kb = _open_kb(provider)
-    except KnowledgeBaseError as exc:
+        report = evaluate(kb, load_eval_set(settings.data_dir / "rag_eval.json"))
+    except (KnowledgeBaseError, EmbeddingError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
-    report = evaluate(kb, load_eval_set(settings.data_dir / "rag_eval.json"))
     print(f"[{provider}, min_score {kb.min_score}] {report.summary()}")
     for failure in report.failures:
         print(f"  - {failure}")
