@@ -245,3 +245,35 @@ async def test_realtime_connection_failure_is_clear_and_stops_the_mcp_server(set
             pass
     assert cleanups == [1]
     assert info.value.__cause__ is None
+
+
+async def test_voice_approvals_arriving_together_are_decided_one_at_a_time(settings):
+    from test_agent import OneAtATimeApprover
+
+    model = ScriptedRealtimeModel(strict=False)
+    approver = OneAtATimeApprover([True, False])
+    async with VoiceSession(settings, approver, model=model) as voice:
+        book = json.dumps({"lead_id": "L-005", "slot_id": "S-20261202-0900"})
+        cancel = json.dumps({"appointment_id": "A-001", "reason": "x"})
+        await model.emit(
+            RealtimeModelToolCallEvent(name="book_appointment", call_id="p1", arguments=book),
+            RealtimeModelToolCallEvent(name="cancel_appointment", call_id="p2", arguments=cancel),
+        )
+        await wait_until(lambda: sum(e["type"] == "approval_decision" for e in voice.logger.events) == 2)
+        await wait_until(lambda: sum(e["type"] == "tool_result" for e in voice.logger.events) == 2)
+    assert approver.max_active == 1
+    decisions = {e["tool"]: e["approved"] for e in voice.logger.events if e["type"] == "approval_decision"}
+    assert decisions == {"book_appointment": True, "cancel_appointment": False}
+    assert appointments(settings) == {
+        "A-001": "booked",
+        "A-002": "booked",
+        "A-003": "booked",
+        "A-004": "booked",
+    }
+
+
+def test_card_redaction_uses_the_luhn_checksum():
+    assert redact("card 4111 1111 1111 1111") == "card [REDACTED_CARD]"
+    assert redact("card 5500-0000-0000-0004") == "card [REDACTED_CARD]"
+    budgets = "budgets 1500 2500 4800 7500"  # 16 digits, not a valid card number
+    assert redact(budgets) == budgets

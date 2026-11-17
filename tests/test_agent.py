@@ -342,3 +342,64 @@ async def test_console_approver(answers, approved, reason, capsys):
         and "Book slot X" in shown
         and "WARNING: W!" in shown
     )
+
+
+# ---------- review fixes ----------
+class OneAtATimeApprover:
+    """Answers in arrival order and records whether two decisions ever overlapped."""
+
+    def __init__(self, answers):
+        self.answers = list(answers)
+        self.active = 0
+        self.max_active = 0
+        self.order = []
+
+    async def decide(self, request):
+        self.active += 1
+        self.max_active = max(self.max_active, self.active)
+        self.order.append(request.tool_name)
+        await asyncio.sleep(0.05)  # a human taking a moment
+        self.active -= 1
+        return Decision(self.answers.pop(0), "tester")
+
+
+async def test_the_gate_shows_one_approval_at_a_time(settings):
+    from voice_agent.hitl import ApprovalGate
+    from voice_agent.observability import SessionLogger
+
+    approver = OneAtATimeApprover([True, False])
+    gate = ApprovalGate(approver, SessionLogger(settings.var_dir / "logs", "text"))
+    first, second = await asyncio.gather(
+        gate.review("book_appointment", '{"lead_id": "L-005"}', "a"),
+        gate.review("cancel_appointment", '{"appointment_id": "A-001"}', "b"),
+    )
+    assert approver.max_active == 1
+    assert approver.order == ["book_appointment", "cancel_appointment"]
+    assert (first.approved, second.approved) == (True, False)  # each answer applied to its own request
+
+
+async def test_a_failed_turn_apologises_and_never_shows_provider_text(settings):
+    class FakeAuthError(Exception):
+        status_code = 401
+
+    leaky = FakeAuthError("Incorrect API key provided: sk-proj-" + "abcd" + "****" + "wxyz")
+    steps = [leaky, [assistant_message("Our office opens at 8 a.m.")]]
+    session, _, replies = await run(settings, steps, ["What time do you open?", "And when do you open?"])
+    from voice_agent.agent.text_mode import TECHNICAL_PROBLEM_REPLY
+
+    assert replies == [TECHNICAL_PROBLEM_REPLY, "Our office opens at 8 a.m."]  # the call carried on
+    error = events_of(session, "error")[0]
+    assert error["error"] == "FakeAuthError, HTTP 401" and "detail" not in error
+    log = (settings.var_dir / "logs" / "sessions.jsonl").read_text()
+    assert "abcd" not in log and "Incorrect API key" not in log
+    roles = [m.get("role") for m in session.history if isinstance(m, dict) and m.get("role")]
+    assert roles.count("user") == 1  # the failed turn was not added to the history
+
+
+async def test_max_turns_is_handled_like_any_failed_turn(settings):
+    from voice_agent.agent.text_mode import TECHNICAL_PROBLEM_REPLY
+
+    loop = [[function_call("search_leads", {"query": "x"}, call_id=f"m{i}")] for i in range(20)]
+    session, _, replies = await run(settings, loop, ["keep searching"])
+    assert replies == [TECHNICAL_PROBLEM_REPLY]
+    assert events_of(session, "error")[0]["error"] == "MaxTurnsExceeded"

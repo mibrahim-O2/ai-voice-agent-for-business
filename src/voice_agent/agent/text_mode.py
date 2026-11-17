@@ -22,6 +22,17 @@ from .guardrails import AgentContext, detect_injection, request_human, wrap_call
 from .instructions import GREETING
 
 MAX_TURNS = 12  # model calls per caller message, including tool calls
+TECHNICAL_PROBLEM_REPLY = (
+    "I'm sorry, I'm having a technical problem right now and couldn't finish that. Nothing has "
+    "been changed. A team member can call you back during business hours. Is there anything else "
+    "I can help with?"
+)
+
+
+def describe_error(exc: BaseException) -> str:
+    """Error class and HTTP status only. Provider messages can contain a masked API key."""
+    status = getattr(exc, "status_code", None)
+    return type(exc).__name__ + (f", HTTP {status}" if status else "")
 
 
 def unwrap_tool_output(output: Any) -> str:
@@ -178,9 +189,12 @@ class TextSession:
                     self.agent, state, context=self.context, max_turns=MAX_TURNS, run_config=self.run_config
                 )
                 self.model_requests += max(0, len(result.raw_responses) - before)
-        except Exception as exc:
-            self.logger.log("error", where="agent_run", error=type(exc).__name__, detail=str(exc)[:300])
-            raise
+        except Exception as exc:  # noqa: BLE001 - one failed turn must not end the call
+            # Log the class and status only, never str(exc); the turn is not added to the history,
+            # so the next turn starts from a consistent conversation.
+            self.logger.log("error", where="agent_run", error=describe_error(exc))
+            self.logger.log("agent", text=TECHNICAL_PROBLEM_REPLY, technical_problem=True)
+            return TECHNICAL_PROBLEM_REPLY
 
         self._log_new_items(result.new_items)
         self.history = result.to_input_list()
