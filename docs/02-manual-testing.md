@@ -59,7 +59,7 @@ Steps C1–C8 check retrieval directly. Section E checks that the agent uses it 
 | C6 | `voice-agent ask "What is the capital of France?"` | `I don't know …` | |
 | C7 | `voice-agent rag-eval` | `answered 17/18 … refused 10/10` | |
 | C8 | Optional, uses your key: `voice-agent ingest --provider openai`, then `voice-agent ask "Can I pay by card?" --provider openai` | `OpenAI embedding requests made: 1`; a passage from `07-payment-and-warranty.md` | |
-| C9 | Edit `data/knowledge/02-business-hours.md` (change 6:00 PM to 7:00 PM), then `voice-agent ask "When does the office close?"` | The answer shows 7:00 PM: the local index rebuilt itself. Undo the edit with `git checkout data/knowledge` | |
+| C9 | Edit `data/knowledge/02-business-hours.md` (change 6:00 PM to 7:00 PM), then `voice-agent ask "What time does the office close on weekdays?"` | The answer shows 7:00 PM: the local index rebuilt itself. Undo the edit with `git checkout data/knowledge` | |
 
 ## D. Human-in-the-loop *(steps added in Task 4)*
 
