@@ -65,3 +65,21 @@ def test_cli_runs_as_module():
     )
     assert result.returncode == 0
     assert result.stdout.strip() == __version__
+
+
+def test_cli_tools_lists_sensitivity(capsys):
+    assert main(["tools"]) == 0
+    out = capsys.readouterr().out
+    assert "book_appointment       YES" in out and "search_leads           no" in out
+
+
+def test_cli_reset_data(capsys, tmp_path, monkeypatch):
+    monkeypatch.setenv("VOICE_AGENT_VAR_DIR", str(tmp_path))
+    assert main(["reset-data"]) == 0
+    assert (tmp_path / "state" / "calendar.json").exists()
+    assert "restored" in capsys.readouterr().out
+
+
+def test_cli_mcp_refuses_public_host_without_flag(capsys):
+    assert main(["mcp", "--transport", "streamable-http", "--host", "0.0.0.0"]) == 2  # noqa: S104
+    assert "no authentication" in capsys.readouterr().err

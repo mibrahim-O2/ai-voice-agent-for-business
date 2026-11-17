@@ -53,8 +53,20 @@ def _reset_data() -> int:
     return 0
 
 
-def _mcp(transport: str, host: str, port: int) -> int:
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def _mcp(transport: str, host: str, port: int, allow_remote: bool = False) -> int:
     from .mcp_server import create_default_server
+
+    if transport != "stdio" and host not in LOOPBACK_HOSTS and not allow_remote:
+        print(
+            f"Refusing to listen on {host}: the MCP HTTP endpoint has no authentication and exposes "
+            "tools that change data. Keep it on 127.0.0.1 (the agent runs on the same machine), or "
+            "pass --allow-remote only behind an authenticating proxy or private network.",
+            file=sys.stderr,
+        )
+        return 2
 
     server = create_default_server()
     if transport == "stdio":
@@ -76,6 +88,9 @@ def main(argv: list[str] | None = None) -> int:
     mcp.add_argument("--transport", choices=["stdio", "streamable-http"], default="stdio")
     mcp.add_argument("--host", default="127.0.0.1", help="HTTP only; keep 127.0.0.1 unless behind auth")
     mcp.add_argument("--port", type=int, default=8765, help="HTTP only")
+    mcp.add_argument(
+        "--allow-remote", action="store_true", help="HTTP only; allow a non-loopback host (no built-in auth)"
+    )
     args = parser.parse_args(argv)
 
     if args.command == "version":
@@ -88,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "reset-data":
         return _reset_data()
     if args.command == "mcp":
-        return _mcp(args.transport, args.host, args.port)
+        return _mcp(args.transport, args.host, args.port, args.allow_remote)
     parser.error(f"unknown command {args.command}")  # pragma: no cover
     return 2  # pragma: no cover
 
