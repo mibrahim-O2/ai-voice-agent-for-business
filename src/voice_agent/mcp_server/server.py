@@ -227,7 +227,8 @@ def build_server(
 
 def create_default_server(settings: Settings | None = None) -> MCPServer:
     settings = settings or load_settings()
-    store = DataStore(settings.data_dir, settings.var_dir)
+    fixed_now = settings.fixed_now
+    store = DataStore(settings.data_dir, settings.var_dir, clock=(lambda: fixed_now) if fixed_now else None)
     kb, kb_error = None, None
     try:
         kb = KnowledgeBase.open(

@@ -1,13 +1,14 @@
 """Command-line entry point: `voice-agent <command>`.
 
-Commands: version, validate-data, tools, reset-data, mcp, ingest, ask, rag-eval.
-Task 4 adds text and voice.
+Commands: version, validate-data, tools, reset-data, mcp, ingest, ask, rag-eval,
+text, voice, demo, approvals.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -155,6 +156,75 @@ def _rag_eval(provider: str | None) -> int:
     return 0 if report.refusal_rate == 1.0 else 1
 
 
+def _agent(command: str, args) -> int:
+    """text / voice: start a live session with the OpenAI model (needs OPENAI_API_KEY)."""
+    import asyncio
+
+    from .agent.runners import make_approver, run_text_chat, run_voice_microphone, run_voice_typed
+    from .config import ConfigError, load_settings
+
+    try:
+        settings = load_settings()
+        settings.require_openai_key()
+    except ConfigError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        print("Tip: `voice-agent demo` runs a scripted conversation with no key.", file=sys.stderr)
+        return 1
+    approver = make_approver(args.auto_reject)
+    try:
+        if command == "text":
+            asyncio.run(run_text_chat(settings, approver))
+        elif args.type:
+            wav = args.save_audio or settings.var_dir / "audio" / "last-call.wav"
+            asyncio.run(run_voice_typed(settings, approver, wav, args.voice))
+        else:
+            asyncio.run(run_voice_microphone(settings, approver, args.voice))
+    except KeyboardInterrupt:
+        print("\nCall ended.", file=sys.stderr)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _demo() -> int:
+    import asyncio
+
+    from .agent.demo import run_demo
+    from .config import load_settings
+
+    asyncio.run(run_demo(load_settings()))
+    return 0
+
+
+def _approvals(session_id: str | None, demo: bool) -> int:
+    from .config import load_settings
+    from .observability import read_events
+
+    settings = load_settings()
+    log_dir = settings.var_dir / ("demo/logs" if demo else "logs")
+    events = read_events(log_dir, session_id)
+    requests = {(e["session_id"], e["call_id"]): e for e in events if e["type"] == "approval_requested"}
+    decisions = {(e["session_id"], e["call_id"]): e for e in events if e["type"] == "approval_decision"}
+    if not requests:
+        print(f"No approval requests in {log_dir / 'sessions.jsonl'}")
+        return 0
+    counts = {"approved": 0, "rejected": 0, "pending": 0}
+    for key, request in requests.items():
+        decision = decisions.get(key)
+        if decision is None:
+            status, who = "pending", "-"
+        else:
+            status = "approved" if decision.get("approved") else "rejected"
+            who = decision.get("decided_by", "?")
+        counts[status] += 1
+        print(
+            f"{request['ts'][:19]}  {key[0]:<26} {status.upper():<9} {who:<17} {request.get('summary', '')}"
+        )
+    print(f"\n{counts['approved']} approved, {counts['rejected']} rejected, {counts['pending']} pending")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="voice-agent", description="AI voice agent (demo data only)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -177,6 +247,25 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("-k", type=int, default=3, help="passages to return (1-5)")
     rag_eval = sub.add_parser("rag-eval", help="measure retrieval on data/rag_eval.json")
     rag_eval.add_argument("--provider", choices=["local", "openai"])
+    text = sub.add_parser("text", help="chat with the live agent by typing (needs OPENAI_API_KEY)")
+    voice = sub.add_parser("voice", help="talk to the live Realtime voice agent (needs OPENAI_API_KEY)")
+    for p in (text, voice):
+        p.add_argument(
+            "--auto-reject", action="store_true", help="reject every sensitive action (safe try-out)"
+        )
+    voice.add_argument(
+        "--type", action="store_true", help="type instead of speaking; agent audio goes to a WAV"
+    )
+    voice.add_argument(
+        "--save-audio", type=Path, help="WAV path for --type (default var/audio/last-call.wav)"
+    )
+    voice.add_argument("--voice", default="alloy", help="Realtime voice name (default alloy)")
+    sub.add_parser(
+        "demo", help="run scripted demo calls offline (no key) through the real tools and approvals"
+    )
+    approvals = sub.add_parser("approvals", help="list approval requests and decisions from the session logs")
+    approvals.add_argument("--session", help="only this session id")
+    approvals.add_argument("--demo", action="store_true", help="read the demo logs (var/demo/logs)")
     args = parser.parse_args(argv)
 
     if args.command == "version":
@@ -196,6 +285,12 @@ def main(argv: list[str] | None = None) -> int:
         return _ask(args.question, args.provider, args.k)
     if args.command == "rag-eval":
         return _rag_eval(args.provider)
+    if args.command in ("text", "voice"):
+        return _agent(args.command, args)
+    if args.command == "demo":
+        return _demo()
+    if args.command == "approvals":
+        return _approvals(args.session, args.demo)
     parser.error(f"unknown command {args.command}")  # pragma: no cover
     return 2  # pragma: no cover
 

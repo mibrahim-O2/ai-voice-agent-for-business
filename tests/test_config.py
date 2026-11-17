@@ -64,3 +64,11 @@ def test_loading_settings_does_not_modify_the_process_environment(clean_env, tmp
     settings = load_settings(env)
     assert settings.embeddings_provider == "openai" and settings.data_dir == tmp_path
     assert dict(os.environ) == before
+
+
+def test_fixed_now_override(clean_env, tmp_path):
+    clean_env.setenv("VOICE_AGENT_NOW", "2026-11-20T10:00")
+    assert load_settings(tmp_path / "missing.env").fixed_now.isoformat() == "2026-11-20T10:00:00"
+    clean_env.setenv("VOICE_AGENT_NOW", "tomorrow")
+    with pytest.raises(ConfigError, match="VOICE_AGENT_NOW"):
+        load_settings(tmp_path / "missing.env")
