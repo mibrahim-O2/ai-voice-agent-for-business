@@ -69,7 +69,70 @@ voice-agent validate-data        # should end with: OK: all dummy data is valid
 pytest                           # all tests should pass
 ```
 
-## 7. Run the MCP server *(coming in Task 2)*
+## 7. Run the MCP server
+
+The **MCP server** (Model Context Protocol) gives the agent its business tools: a demo CRM
+(leads) and a demo calendar. You normally do not start it yourself: the voice agent starts it
+automatically in the background. You can still run and inspect it on its own.
+
+### 7a. See the tools and which ones need approval
+
+```bash
+voice-agent tools
+```
+
+| Tool | What it does | Needs human approval? |
+|---|---|---|
+| `search_leads` | find leads by name, company, email, phone digits or id; filter by status/tier | no (read-only) |
+| `get_lead` | one lead with notes and appointments | no (read-only) |
+| `list_available_slots` | open one-hour slots in the future, optionally between two dates | no (read-only) |
+| `create_lead` | create a new lead | **yes** |
+| `update_lead` | change fields on a lead | **yes** |
+| `qualify_lead` | score 0–100, set tier (hot ≥ 70, warm ≥ 40, cold) and save it | **yes** |
+| `add_note` | add a note to a lead | **yes** |
+| `book_appointment` | book an open slot for a lead | **yes** |
+| `cancel_appointment` | cancel a booking (a $40 late fee is reported if < 24 h before) | **yes** |
+
+Every tool that changes data is "sensitive". The approval step itself is added in Task 4.
+
+### 7b. Start the server
+
+```bash
+voice-agent mcp                                   # stdio: for MCP clients that start it themselves
+voice-agent mcp --transport streamable-http       # HTTP on http://127.0.0.1:8765/mcp
+```
+
+The HTTP endpoint has **no login**, so it only listens on your own computer (`127.0.0.1`). It
+refuses other addresses unless you add `--allow-remote`, which you should only do behind a proxy
+that adds authentication.
+
+To try it in a graphical tool, run the official MCP Inspector (needs Node.js) and choose
+**Streamable HTTP** with the URL `http://127.0.0.1:8765/mcp`:
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+### 7c. Where your changes go, and how to undo them
+
+The files in `data/` are never changed. On first use they are copied to `var/state/`, and all
+bookings, new leads and notes are saved there. Several processes can safely use it at the same
+time (for example the HTTP server and an agent session), because every change takes a file lock.
+To start again from the original demo data:
+
+```bash
+voice-agent reset-data
+```
+
+### 7d. Demo rules for contact details
+
+To keep the demo free of real personal data, the tools only accept **fictional** contact details:
+
+- phone numbers in the range `555-0100` to `555-0199`, in any common format, for example
+  `(312) 555-0142` or `+1 312 555 0142`,
+- email addresses at `example.com`, for example `ada@example.com`.
+
+Anything else is rejected with a clear message.
 
 ## 8. Load the RAG knowledge base *(coming in Task 3)*
 
@@ -91,6 +154,12 @@ pytest                           # all tests should pass
 | `voice-agent: command not found` | Activate the virtual environment (step 3), then reinstall (step 4) |
 | `OPENAI_API_KEY is not set` | Create `.env` from `.env.example` and add your key (step 5) |
 | `Data validation failed` | You edited a file in `data/`; run `git checkout data/` to restore it |
+| A tool says `this demo only accepts fictional phone numbers` | Use a number like `+1-312-555-0142` (see 7d) |
+| `list_available_slots` returns no slots and a `notice` | The demo dates have passed. Run `python scripts/generate_dummy_data.py --start 2027-01-04` (any future Monday), then `voice-agent reset-data` |
+| `slot … is no longer available` | Someone booked it; list the slots again |
+| `lead … already has upcoming appointment` | One upcoming booking per lead. To reschedule, cancel the old appointment, then book the new slot |
+| `Refusing to listen on 0.0.0.0` | The HTTP MCP server is local-only by default; see 7b |
+| `Address already in use` when starting the HTTP server | Another server is on port 8765; add `--port 8766` |
 | `pip` errors about Python version | Check `python --version` is 3.11 or newer |
 
 More rows are added as features are built.

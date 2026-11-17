@@ -26,6 +26,19 @@ Step-by-step instructions and the live URL are added in Task 5.
 Will cover: the chosen platform and why, step-by-step setup, environment variables, cost, limits,
 and how the API key stays secret.
 
+### MCP server notes for deployment (from Task 2)
+
+- The voice agent starts the MCP server itself over **stdio**, inside the same container, so the
+  MCP server does not need its own public port.
+- If you run the HTTP transport (`voice-agent mcp --transport streamable-http`), it has **no
+  authentication** and exposes tools that change data. It listens on `127.0.0.1` only and refuses
+  public addresses unless you pass `--allow-remote`. Only do that behind an authenticating proxy
+  or on a private network.
+- Demo state (new leads, bookings, notes) is written to `VOICE_AGENT_VAR_DIR/state/`. On platforms
+  with an ephemeral disk it resets on every redeploy, which is fine for a demo. Mount a volume to keep it.
+- For a non-editable install (for example `pip install .` in a Docker image), set
+  `VOICE_AGENT_DATA_DIR` to the absolute path of the `data/` folder.
+
 ## Part C: Keeping the API key secret (applies to every deployment)
 
 - The key lives only in `.env` on your machine, or in the hosting platform's secret settings.

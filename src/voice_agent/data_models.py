@@ -52,8 +52,8 @@ class Lead(BaseModel):
     id: str
     name: str = Field(min_length=1, max_length=100)
     company: str | None = Field(default=None, max_length=120)
-    email: str = Field(max_length=200)
-    phone: str
+    email: str | None = Field(default=None, max_length=200)
+    phone: str | None = None
     source: str = Field(min_length=1, max_length=40)
     service_interest: str = Field(min_length=1, max_length=80)
     budget_usd: int = Field(ge=0, le=1_000_000)
@@ -73,22 +73,24 @@ class Lead(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def _email_fictional(cls, v: str) -> str:
-        if not re.match(r"^[a-z0-9._+-]+@example\.com$", v):
+    def _email_fictional(cls, v: str | None) -> str | None:
+        if v is not None and not re.match(r"^[a-z0-9._+-]+@example\.com$", v):
             raise ValueError("demo emails must use the reserved example.com domain")
         return v
 
     @field_validator("phone")
     @classmethod
-    def _phone_fictional(cls, v: str) -> str:
-        if not FICTIONAL_PHONE_RE.match(v):
+    def _phone_fictional(cls, v: str | None) -> str | None:
+        if v is not None and not FICTIONAL_PHONE_RE.match(v):
             raise ValueError("demo phone numbers must be fictional: +1-XXX-555-01XX")
         return v
 
     @model_validator(mode="after")
-    def _tier_needs_score(self) -> Lead:
+    def _consistent(self) -> Lead:
         if (self.tier is None) != (self.score is None):
             raise ValueError("score and tier must be set together")
+        if not self.email and not self.phone:
+            raise ValueError("a lead needs a phone number or an email address")
         return self
 
 
