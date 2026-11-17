@@ -18,7 +18,7 @@ no paid vector database.
 |---|---|---|
 | 1. Foundation | Structure, dummy data, lint, tests, CI, docs skeleton | ✅ done |
 | 2. MCP server | CRM and calendar tools with validation and sensitivity flags | ✅ done |
-| 3. RAG | Local ingest, embeddings, vector store, retrieval tool with "I don't know" rule | planned |
+| 3. RAG | Local ingest, embeddings, vector store, retrieval tool with "I don't know" rule | ✅ done |
 | 4. Agent + HITL | Text and Realtime voice agent, approval gate, guardrails, structured logs | planned |
 | 5. Dashboard | Static GitHub Pages dashboard and deployment guides | planned |
 
@@ -35,6 +35,8 @@ cp .env.example .env               # then add your own OPENAI_API_KEY (optional 
 voice-agent validate-data          # check the dummy data
 voice-agent tools                  # list MCP tools and which need human approval
 voice-agent mcp                    # run the MCP server (stdio); add --transport streamable-http for HTTP
+voice-agent ingest                 # build the knowledge-base index (offline by default)
+voice-agent ask "Are you open on Saturday?"   # retrieval with sources, or "I don't know"
 pytest                             # run the test suite (offline, no key needed)
 ```
 
@@ -45,7 +47,8 @@ Full beginner guide: [docs/01-user-workflow.md](docs/01-user-workflow.md).
 ```
 src/voice_agent/   Python package
   business/        demo CRM and calendar: JSON store, validation, lead scoring
-  mcp_server/      MCP server and the per-tool sensitivity policy
+  mcp_server/      MCP server (CRM, calendar and search_knowledge tools) and the sensitivity policy
+  rag/             chunking, local TF-IDF or OpenAI embeddings, local vector index, retriever
 data/              fictional leads, calendar and knowledge documents (see data/README.md)
 scripts/           dummy-data generator and secret scanner
 tests/             pytest suite (runs offline)

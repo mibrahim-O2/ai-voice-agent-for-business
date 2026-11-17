@@ -7,10 +7,11 @@ logged, never written to disk by this project, and never included in the repr of
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 # Repo root when running from a clone (editable install). For a regular install, set
 # VOICE_AGENT_DATA_DIR (and VOICE_AGENT_VAR_DIR) to absolute paths instead.
@@ -23,9 +24,9 @@ def _resolve_dir(value: str | None, default: Path) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
-def data_dir() -> Path:
+def data_dir(env: Mapping[str, str] | None = None) -> Path:
     """The dummy-data directory: VOICE_AGENT_DATA_DIR if set, else <repo>/data."""
-    return _resolve_dir(os.getenv("VOICE_AGENT_DATA_DIR"), DATA_DIR)
+    return _resolve_dir((env if env is not None else os.environ).get("VOICE_AGENT_DATA_DIR"), DATA_DIR)
 
 
 VALID_EMBEDDINGS = ("local", "openai")
@@ -62,24 +63,26 @@ class Settings:
 
 def load_settings(env_file: str | os.PathLike[str] | None = None) -> Settings:
     """Build Settings from the environment. A .env file fills in variables that are not already set."""
-    load_dotenv(env_file or PROJECT_ROOT / ".env", override=False)
+    # Read .env without touching os.environ: loading settings must not have side effects on the
+    # process (or leak into other code). Real environment variables win over the file.
+    file_values = dotenv_values(env_file or PROJECT_ROOT / ".env")
+    env: dict[str, str] = {k: v for k, v in file_values.items() if v is not None}
+    env.update(os.environ)
 
-    embeddings = os.getenv("EMBEDDINGS_PROVIDER", "local").strip().lower() or "local"
+    embeddings = env.get("EMBEDDINGS_PROVIDER", "local").strip().lower() or "local"
     if embeddings not in VALID_EMBEDDINGS:
         raise ConfigError(f"EMBEDDINGS_PROVIDER must be one of {VALID_EMBEDDINGS}, got {embeddings!r}")
 
-    log_level = os.getenv("LOG_LEVEL", "INFO").strip().upper() or "INFO"
+    log_level = env.get("LOG_LEVEL", "INFO").strip().upper() or "INFO"
     if log_level not in VALID_LOG_LEVELS:
         raise ConfigError(f"LOG_LEVEL must be one of {VALID_LOG_LEVELS}, got {log_level!r}")
 
-    var_dir = _resolve_dir(os.getenv("VOICE_AGENT_VAR_DIR"), PROJECT_ROOT / "var")
-
     return Settings(
-        openai_api_key=(os.getenv("OPENAI_API_KEY") or "").strip() or None,
-        text_model=os.getenv("OPENAI_TEXT_MODEL", "").strip() or "gpt-4.1-mini",
-        realtime_model=os.getenv("OPENAI_REALTIME_MODEL", "").strip() or "gpt-realtime",
+        openai_api_key=(env.get("OPENAI_API_KEY") or "").strip() or None,
+        text_model=env.get("OPENAI_TEXT_MODEL", "").strip() or "gpt-4.1-mini",
+        realtime_model=env.get("OPENAI_REALTIME_MODEL", "").strip() or "gpt-realtime",
         embeddings_provider=embeddings,
-        var_dir=var_dir,
+        var_dir=_resolve_dir(env.get("VOICE_AGENT_VAR_DIR"), PROJECT_ROOT / "var"),
         log_level=log_level,
-        data_dir=data_dir(),
+        data_dir=data_dir(env),
     )

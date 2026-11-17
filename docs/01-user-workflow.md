@@ -134,7 +134,71 @@ To keep the demo free of real personal data, the tools only accept **fictional**
 
 Anything else is rejected with a clear message.
 
-## 8. Load the RAG knowledge base *(coming in Task 3)*
+## 8. Load the RAG knowledge base
+
+The agent answers questions about the business (hours, prices, policies) from 10 short documents
+in `data/knowledge/`. This is **RAG** (retrieval-augmented generation): before answering, the
+agent searches these documents and must answer only from what it finds, naming the source.
+
+### 8a. Build the index
+
+```bash
+voice-agent ingest                      # offline, free, no key needed (EMBEDDINGS_PROVIDER=local)
+voice-agent ingest --provider openai    # optional: OpenAI embeddings (needs your key, ~1 API call)
+```
+
+This splits each document into chunks, turns each chunk into a vector ("embedding") and saves them
+in `var/index/<provider>/`. No external database is used.
+
+- The **local** index is rebuilt automatically whenever the documents change, even while the
+  agent or MCP server is running (changes are picked up within about 2 seconds), so you can skip
+  this step for local mode.
+- The **OpenAI** index is never rebuilt automatically (that would spend API credit without you
+  asking). After editing a document, run `voice-agent ingest --provider openai` again. Until then,
+  results carry `index_stale: true` and `ask` prints a warning.
+
+### 8b. Ask the knowledge base a question
+
+```bash
+voice-agent ask "How much does a diagnostic visit cost?"
+voice-agent ask "Do you install solar panels?"
+```
+
+The first prints passages with their source file and a similarity score. The second prints
+`I don't know: nothing relevant in the knowledge base`, because the documents don't cover it.
+**The agent never invents an answer:** when nothing scores above the threshold, the tool returns
+`found: false` and the agent says it doesn't know and offers a human.
+
+### 8c. Check retrieval quality
+
+```bash
+voice-agent rag-eval                    # local
+voice-agent rag-eval --provider openai  # one batched API request for all 28 questions
+```
+
+It runs the 28 labelled questions in `data/rag_eval.json` (18 the documents answer, 10 they don't)
+and reports how many were answered with the right source and how many were correctly refused.
+Expected result for local mode:
+`answered 17/18 … refused 10/10`. The one miss ("financing for a new furnace") gets "I don't
+know", which is the safe way to fail.
+
+### 8d. Add or change a document
+
+1. Create `data/knowledge/11-your-topic.md` starting with front matter:
+
+   ```
+   ---
+   title: Your topic
+   category: policy
+   ---
+   # Your topic
+   Short paragraphs. Keep each document under about 400 words.
+   ```
+
+2. Run `voice-agent ingest` (and `--provider openai` if you use it).
+3. Run `voice-agent rag-eval`, and add a question for the new document to `data/rag_eval.json`.
+
+Keep everything fictional: no real names, phone numbers or companies.
 
 ## 9. Run the voice agent *(coming in Task 4)*
 
@@ -160,6 +224,9 @@ Anything else is rejected with a clear message.
 | `lead … already has upcoming appointment` | One upcoming booking per lead. To reschedule, cancel the old appointment, then book the new slot |
 | `Refusing to listen on 0.0.0.0` | The HTTP MCP server is local-only by default; see 7b |
 | `Address already in use` when starting the HTTP server | Another server is on port 8765; add `--port 8766` |
+| `The openai index cannot be used … Run: voice-agent ingest --provider openai` | Build the OpenAI index first (step 8a), or set `EMBEDDINGS_PROVIDER=local` |
+| `EMBEDDINGS_PROVIDER is 'openai' but OPENAI_API_KEY is not set` | Add your key to `.env`, or switch to `EMBEDDINGS_PROVIDER=local` |
+| `ask` says "I don't know" for a question the documents do cover | The wording is far from the document's. Rephrase, use OpenAI embeddings, or add the caller's wording to the document |
 | `pip` errors about Python version | Check `python --version` is 3.11 or newer |
 
 More rows are added as features are built.

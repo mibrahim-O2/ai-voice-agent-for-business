@@ -1,0 +1,33 @@
+{
+  "_note": "Labelled questions for the fictional knowledge base. 'expected' lists acceptable source files; an empty list means the knowledge base cannot answer and retrieval must return found=false.",
+  "questions": [
+    {"q": "What time do you open on weekdays?", "expected": ["02-business-hours.md"]},
+    {"q": "Are you open on Saturday?", "expected": ["02-business-hours.md"]},
+    {"q": "How much does a diagnostic visit cost?", "expected": ["03-services-and-pricing.md", "09-faq.md"]},
+    {"q": "What is the price of a water heater installation?", "expected": ["03-services-and-pricing.md"]},
+    {"q": "Do you serve Riverbend?", "expected": ["04-service-area.md"]},
+    {"q": "Is there a travel fee if I live far away?", "expected": ["04-service-area.md"]},
+    {"q": "How do I book an appointment?", "expected": ["05-booking-policy.md"]},
+    {"q": "What happens if I cancel less than 24 hours before my appointment?", "expected": ["06-cancellation-policy.md"]},
+    {"q": "Do you accept cash?", "expected": ["07-payment-and-warranty.md"]},
+    {"q": "How long is the warranty on repairs?", "expected": ["07-payment-and-warranty.md"]},
+    {"q": "I smell gas in my kitchen, what should I do?", "expected": ["08-emergency-service.md"]},
+    {"q": "Is emergency service available at night?", "expected": ["08-emergency-service.md"]},
+    {"q": "Are your technicians licensed and insured?", "expected": ["09-faq.md"]},
+    {"q": "Can I talk to a real person?", "expected": ["09-faq.md", "10-privacy-and-ai-calls.md"]},
+    {"q": "Am I talking to an AI?", "expected": ["10-privacy-and-ai-calls.md", "01-company-overview.md", "09-faq.md"]},
+    {"q": "Do you sell my personal data?", "expected": ["10-privacy-and-ai-calls.md"]},
+    {"q": "Do you offer financing for a new furnace?", "expected": ["07-payment-and-warranty.md"]},
+    {"q": "How much is the annual maintenance plan?", "expected": ["03-services-and-pricing.md", "09-faq.md"]},
+    {"q": "Do you repair cars?", "expected": []},
+    {"q": "Can you fix my roof?", "expected": []},
+    {"q": "What is the capital of France?", "expected": []},
+    {"q": "Do you install solar panels?", "expected": []},
+    {"q": "What is the owner's home address?", "expected": []},
+    {"q": "Do you offer pool cleaning?", "expected": []},
+    {"q": "Can you recommend a good restaurant nearby?", "expected": []},
+    {"q": "What is your company's stock price?", "expected": []},
+    {"q": "How many people work in your Tokyo office?", "expected": []},
+    {"q": "Do you do pest control for termites?", "expected": []}
+  ]
+}

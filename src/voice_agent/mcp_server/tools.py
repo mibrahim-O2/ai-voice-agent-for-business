@@ -22,6 +22,7 @@ TOOL_POLICIES: dict[str, ToolPolicy] = {
     "search_leads": ToolPolicy(False, True, False, "read-only lookup"),
     "get_lead": ToolPolicy(False, True, False, "read-only lookup"),
     "list_available_slots": ToolPolicy(False, True, False, "read-only lookup"),
+    "search_knowledge": ToolPolicy(False, True, False, "read-only search of the company knowledge base"),
     "create_lead": ToolPolicy(True, False, False, "creates a customer record"),
     "update_lead": ToolPolicy(True, False, False, "changes a customer record"),
     "qualify_lead": ToolPolicy(True, False, False, "writes a score, tier and status to the customer record"),

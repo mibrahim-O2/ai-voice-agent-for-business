@@ -7,6 +7,7 @@ are invented for the demo.
 |---|---|
 | `leads.json` | 25 leads (CRM records) with status, budget, timeline, and score and tier for qualified leads |
 | `calendar.json` | Two weeks of one-hour appointment slots (Mon–Fri, 9:00–17:00, no 12:00 slot), with a few existing appointments and blocked slots |
+| `rag_eval.json` | 28 labelled questions for the knowledge base: 18 it answers (with the expected source) and 10 it must refuse |
 | `knowledge/*.md` | 10 short documents for the RAG knowledge base: overview, hours, services and pricing, service area, booking, cancellation, payment and warranty, emergencies, FAQ, privacy |
 
 Rules the tests enforce:
