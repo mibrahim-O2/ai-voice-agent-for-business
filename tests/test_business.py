@@ -287,3 +287,55 @@ def test_cancel_validation(service):
         service.cancel_appointment("A-999", "x")
     with pytest.raises(InvalidInput, match="reason is required"):
         service.cancel_appointment("A-001", None)
+
+
+# ---------- review fixes ----------
+def test_cannot_cancel_an_appointment_that_already_happened(tmp_path):
+    svc = BusinessService(DataStore(DATA_DIR, tmp_path, clock=lambda: datetime(2026, 11, 30, 9, 0)))
+    appt = svc.book_appointment("L-005", "S-20261201-0900")["appointment"]["id"]
+    after = BusinessService(DataStore(DATA_DIR, tmp_path, clock=lambda: datetime(2026, 12, 1, 9, 30)))
+    with pytest.raises(InvalidInput, match="already started or taken place"):
+        after.cancel_appointment(appt, "too late")
+    assert after.get_lead("L-005")["lead"]["status"] == "booked"  # history unchanged
+
+
+def test_a_lead_cannot_hold_two_upcoming_bookings(service):
+    slots = [s["slot_id"] for s in service.list_available_slots(limit=2)["slots"]]
+    first = service.book_appointment("L-005", slots[0])["appointment"]["id"]
+    with pytest.raises(Conflict, match=f"already has upcoming appointment {first}"):
+        service.book_appointment("L-005", slots[1])
+    # reschedule = cancel + book
+    service.cancel_appointment(first, "reschedule")
+    assert service.book_appointment("L-005", slots[1])["booked"]
+
+
+def test_now_does_not_reparse_the_calendar(tmp_path, monkeypatch):
+    store = DataStore(DATA_DIR, tmp_path)
+    calls = []
+    monkeypatch.setattr(store, "calendar", lambda: calls.append(1))
+    store.now()
+    store.now()
+    assert calls == []
+
+
+def test_concurrent_writers_in_separate_processes_lose_nothing(tmp_path):
+    """Four processes each add 10 notes to the same lead at the same time; all 40 must survive."""
+    import subprocess
+    import sys
+
+    script = (
+        "import sys; from pathlib import Path\n"
+        "from voice_agent.business import BusinessService, DataStore\n"
+        "from voice_agent.config import DATA_DIR\n"
+        "svc = BusinessService(DataStore(DATA_DIR, Path(sys.argv[1])))\n"
+        "for i in range(10): svc.add_note('L-001', f'{sys.argv[2]}-{i}')\n"
+    )
+    DataStore(DATA_DIR, tmp_path)  # create the state once
+    procs = [
+        subprocess.Popen([sys.executable, "-c", script, str(tmp_path), f"p{n}"])  # noqa: S603
+        for n in range(4)
+    ]
+    assert all(p.wait(timeout=60) == 0 for p in procs)
+    notes = DataStore(DATA_DIR, tmp_path).leads()[0].notes
+    assert len(notes) == 1 + 40
+    assert {n.text for n in notes[1:]} == {f"p{n}-{i}" for n in range(4) for i in range(10)}
