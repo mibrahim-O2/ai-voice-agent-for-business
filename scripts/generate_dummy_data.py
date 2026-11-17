@@ -26,24 +26,80 @@ SLOT_HOURS = [9, 10, 11, 13, 14, 15, 16]  # 12:00 is lunch
 STAFF = ["Tech Avery (demo)", "Tech Jordan (demo)"]
 
 FIRST = [
-    "Ada", "Bram", "Cleo", "Dario", "Esme", "Faris", "Greta", "Hugo", "Ines", "Jonah",
-    "Kaia", "Lior", "Mina", "Nico", "Oona", "Pavel", "Quinn", "Rosa", "Silas", "Tova",
-    "Ugo", "Vera", "Wren", "Xavi", "Yara",
+    "Ada",
+    "Bram",
+    "Cleo",
+    "Dario",
+    "Esme",
+    "Faris",
+    "Greta",
+    "Hugo",
+    "Ines",
+    "Jonah",
+    "Kaia",
+    "Lior",
+    "Mina",
+    "Nico",
+    "Oona",
+    "Pavel",
+    "Quinn",
+    "Rosa",
+    "Silas",
+    "Tova",
+    "Ugo",
+    "Vera",
+    "Wren",
+    "Xavi",
+    "Yara",
 ]
 LAST = [
-    "Ashgrove", "Brightwater", "Calloway", "Dunmore", "Elderby", "Fenwick", "Gallowmere", "Hartwell",
-    "Ivers", "Juniper", "Kettering", "Larkspur", "Merriweather", "Northcott", "Oakhurst", "Pemberly",
-    "Quarrington", "Rookwood", "Stonebridge", "Thistlewood", "Underhill", "Vantress", "Whitlock",
-    "Yarrowby", "Zephyrine",
+    "Ashgrove",
+    "Brightwater",
+    "Calloway",
+    "Dunmore",
+    "Elderby",
+    "Fenwick",
+    "Gallowmere",
+    "Hartwell",
+    "Ivers",
+    "Juniper",
+    "Kettering",
+    "Larkspur",
+    "Merriweather",
+    "Northcott",
+    "Oakhurst",
+    "Pemberly",
+    "Quarrington",
+    "Rookwood",
+    "Stonebridge",
+    "Thistlewood",
+    "Underhill",
+    "Vantress",
+    "Whitlock",
+    "Yarrowby",
+    "Zephyrine",
 ]
 COMPANIES = [
-    None, "Fernhollow Bakery (demo)", "Pebblebrook Dental (demo)", None, "Copperleaf Cafe (demo)",
-    None, "Mossgate Apartments (demo)", None, "Tidewell Fitness (demo)", None,
+    None,
+    "Fernhollow Bakery (demo)",
+    "Pebblebrook Dental (demo)",
+    None,
+    "Copperleaf Cafe (demo)",
+    None,
+    "Mossgate Apartments (demo)",
+    None,
+    "Tidewell Fitness (demo)",
+    None,
 ]
 SOURCES = ["website_form", "inbound_call", "referral", "google_ads", "facebook_ads"]
 SERVICES = [
-    "AC repair", "Furnace installation", "Plumbing repair", "Water heater installation",
-    "Electrical inspection", "Duct cleaning", "Annual maintenance plan",
+    "AC repair",
+    "Furnace installation",
+    "Plumbing repair",
+    "Water heater installation",
+    "Electrical inspection",
+    "Duct cleaning",
+    "Annual maintenance plan",
 ]
 TIMELINES = ["this_week", "this_month", "next_quarter", "just_researching"]
 AREA_CODES = ["312", "415", "512", "617", "702", "808"]
@@ -147,7 +203,9 @@ def make_calendar(rng: random.Random, start: date, leads: list[dict]) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--start", type=date.fromisoformat, default=DEFAULT_START)
     args = parser.parse_args()
 

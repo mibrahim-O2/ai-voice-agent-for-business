@@ -32,7 +32,9 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 addopts = "-q"
 
 [tool.ruff]
@@ -45,5 +47,6 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM"]
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]
-"scripts/**" = ["S311"]
+# Tests and scripts run fixed `git` commands (no shell, no user input).
+"tests/**" = ["S101", "S603", "S607"]
+"scripts/**" = ["S311", "S603", "S607"]

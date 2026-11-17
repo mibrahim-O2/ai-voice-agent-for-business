@@ -24,7 +24,8 @@ def _validate_data() -> int:
     docs = list_knowledge_files()
     free = sum(1 for s in calendar.slots if s.available)
     print(f"leads: {len(leads)}")
-    print(f"calendar slots: {len(calendar.slots)} ({free} available), appointments: {len(calendar.appointments)}")
+    print(f"calendar slots: {len(calendar.slots)} ({free} available)")
+    print(f"appointments: {len(calendar.appointments)}")
     print(f"knowledge documents: {len(docs)}")
     print("OK: all dummy data is valid")
     return 0
