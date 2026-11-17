@@ -116,7 +116,9 @@ npx @modelcontextprotocol/inspector
 ### 7c. Where your changes go, and how to undo them
 
 The files in `data/` are never changed. On first use they are copied to `var/state/`, and all
-bookings, new leads and notes are saved there. To start again from the original demo data:
+bookings, new leads and notes are saved there. Several processes can safely use it at the same
+time (for example the HTTP server and an agent session), because every change takes a file lock.
+To start again from the original demo data:
 
 ```bash
 voice-agent reset-data
@@ -155,6 +157,7 @@ Anything else is rejected with a clear message.
 | A tool says `this demo only accepts fictional phone numbers` | Use a number like `+1-312-555-0142` (see 7d) |
 | `list_available_slots` returns no slots and a `notice` | The demo dates have passed. Run `python scripts/generate_dummy_data.py --start 2027-01-04` (any future Monday), then `voice-agent reset-data` |
 | `slot … is no longer available` | Someone booked it; list the slots again |
+| `lead … already has upcoming appointment` | One upcoming booking per lead. To reschedule, cancel the old appointment, then book the new slot |
 | `Refusing to listen on 0.0.0.0` | The HTTP MCP server is local-only by default; see 7b |
 | `Address already in use` when starting the HTTP server | Another server is on port 8765; add `--port 8766` |
 | `pip` errors about Python version | Check `python --version` is 3.11 or newer |

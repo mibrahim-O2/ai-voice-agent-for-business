@@ -71,6 +71,8 @@ Will include: the approve path and the reject path for a booking.
 | F10 | `book_appointment` twice on the same slot (two different leads) | Second call: `conflict: slot … is no longer available` | |
 | F11 | `update_lead` with only `lead_id` | Error: nothing to update | |
 | F12 | `voice-agent mcp --transport streamable-http --host 0.0.0.0` | Refuses to start and explains why (no authentication) | |
+| F13 | Book a slot for `L-026`, then book a second slot for `L-026` | Second call: `conflict: lead L-026 already has upcoming appointment …; to reschedule, cancel it first` | |
+| F14 | `cancel_appointment` for an appointment whose start time has passed (use a demo date that is already in the past, or skip if none) | Error: already started or taken place; no late fee | |
 | F1 | Empty `OPENAI_API_KEY` in `.env`, then start live text mode | A clear message: `OPENAI_API_KEY is not set. Copy .env.example to .env…`; no crash trace | |
 
 ## G. Dashboard *(steps added in Task 5)*
