@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -46,6 +47,8 @@ class Settings:
     var_dir: Path = PROJECT_ROOT / "var"
     log_level: str = "INFO"
     data_dir: Path = DATA_DIR
+    # Optional fixed "now" for the demo calendar (tests and demos after the demo dates have passed).
+    fixed_now: datetime | None = None
 
     @property
     def has_openai_key(self) -> bool:
@@ -77,6 +80,16 @@ def load_settings(env_file: str | os.PathLike[str] | None = None) -> Settings:
     if log_level not in VALID_LOG_LEVELS:
         raise ConfigError(f"LOG_LEVEL must be one of {VALID_LOG_LEVELS}, got {log_level!r}")
 
+    fixed_now = None
+    raw_now = env.get("VOICE_AGENT_NOW", "").strip()
+    if raw_now:
+        try:
+            fixed_now = datetime.fromisoformat(raw_now).replace(tzinfo=None)
+        except ValueError as exc:
+            raise ConfigError(
+                f"VOICE_AGENT_NOW must be an ISO date-time like 2026-11-20T10:00, got {raw_now!r}"
+            ) from exc
+
     return Settings(
         openai_api_key=(env.get("OPENAI_API_KEY") or "").strip() or None,
         text_model=env.get("OPENAI_TEXT_MODEL", "").strip() or "gpt-4.1-mini",
@@ -85,4 +98,5 @@ def load_settings(env_file: str | os.PathLike[str] | None = None) -> Settings:
         var_dir=_resolve_dir(env.get("VOICE_AGENT_VAR_DIR"), PROJECT_ROOT / "var"),
         log_level=log_level,
         data_dir=data_dir(env),
+        fixed_now=fixed_now,
     )
