@@ -385,6 +385,18 @@ class BusinessService:
                 raise InvalidInput(f"slot {slot_id} is in the past")
             if not slot.available:
                 raise Conflict(f"slot {slot_id} is no longer available; call list_available_slots again")
+            slot_start = {s.id: s.start for s in calendar.slots}
+            now = self.store.now()
+            for existing in calendar.appointments:
+                if (
+                    existing.lead_id == lead_id
+                    and existing.status == "booked"
+                    and slot_start[existing.slot_id] > now
+                ):
+                    raise Conflict(
+                        f"lead {lead_id} already has upcoming appointment {existing.id}; "
+                        "to reschedule, cancel it first and then book the new slot"
+                    )
 
             next_num = max((int(a.id[2:]) for a in calendar.appointments), default=0) + 1
             appt = Appointment(
@@ -426,14 +438,16 @@ class BusinessService:
                 raise Conflict(f"appointment {appointment_id} is already cancelled")
             slot = next(s for s in calendar.slots if s.id == appt.slot_id)
             now = self.store.now()
+            if slot.start <= now:
+                raise InvalidInput(
+                    f"appointment {appointment_id} has already started or taken place and cannot be cancelled"
+                )
             late = slot.start - now < timedelta(hours=LATE_CANCEL_HOURS)
 
             cancelled = appt.model_copy(update={"status": "cancelled"})
             appts = [cancelled if a.id == appointment_id else a for a in calendar.appointments]
-            release = slot.start > now
             slots = [
-                s.model_copy(update={"available": True}) if s.id == slot.id and release else s
-                for s in calendar.slots
+                s.model_copy(update={"available": True}) if s.id == slot.id else s for s in calendar.slots
             ]
             leads = self.store.leads()
             lead = self._find_lead(leads, appt.lead_id)
@@ -451,7 +465,7 @@ class BusinessService:
         return {
             "cancelled": True,
             "appointment_id": appointment_id,
-            "slot_released": release,
+            "slot_released": True,
             "late_cancellation": late,
             "late_fee_usd": LATE_CANCEL_FEE_USD if late else 0,
         }
