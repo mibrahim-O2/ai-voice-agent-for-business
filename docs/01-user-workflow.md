@@ -150,10 +150,12 @@ voice-agent ingest --provider openai    # optional: OpenAI embeddings (needs you
 This splits each document into chunks, turns each chunk into a vector ("embedding") and saves them
 in `var/index/<provider>/`. No external database is used.
 
-- The **local** index is rebuilt automatically whenever the documents change, so you can skip
+- The **local** index is rebuilt automatically whenever the documents change, even while the
+  agent or MCP server is running (changes are picked up within about 2 seconds), so you can skip
   this step for local mode.
 - The **OpenAI** index is never rebuilt automatically (that would spend API credit without you
-  asking). Run `voice-agent ingest --provider openai` again after editing a document.
+  asking). After editing a document, run `voice-agent ingest --provider openai` again. Until then,
+  results carry `index_stale: true` and `ask` prints a warning.
 
 ### 8b. Ask the knowledge base a question
 
@@ -171,7 +173,7 @@ The first prints passages with their source file and a similarity score. The sec
 
 ```bash
 voice-agent rag-eval                    # local
-voice-agent rag-eval --provider openai  # makes one API call per question (28 small calls)
+voice-agent rag-eval --provider openai  # one batched API request for all 28 questions
 ```
 
 It runs the 28 labelled questions in `data/rag_eval.json` (18 the documents answer, 10 they don't)
