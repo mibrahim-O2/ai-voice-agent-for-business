@@ -18,6 +18,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Microphone and speaker support for `voice-agent voice` (needs PortAudio on Linux).
+voice = ["sounddevice>=0.4.6"]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",
@@ -50,3 +52,5 @@ ignore = []
 # Tests and scripts run fixed `git` commands (no shell, no user input).
 "tests/**" = ["S101", "S603", "S607"]
 "scripts/**" = ["S311", "S603", "S607"]
+# Scripted demo dialogue reads better unwrapped.
+"src/voice_agent/agent/demo.py" = ["E501"]
