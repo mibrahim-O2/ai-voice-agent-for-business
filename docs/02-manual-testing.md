@@ -108,6 +108,7 @@ Run `voice-agent reset-data` first. Use `voice-agent text` (your key is needed).
 | F11 | `update_lead` with only `lead_id` | Error: nothing to update | |
 | F12 | `voice-agent mcp --transport streamable-http --host 0.0.0.0` | Refuses to start and explains why (no authentication) | |
 | F13 | Book a slot for `L-026`, then book a second slot for `L-026` | Second call: `conflict: lead L-026 already has upcoming appointment …; to reschedule, cancel it first` | |
+| F20 | Set a wrong `OPENAI_API_KEY` (e.g. `wrong-key-for-testing`), run `voice-agent text`, ask anything | The agent says it has a technical problem and the call continues; no traceback; the log's `error` event says `AuthenticationError, HTTP 401` and contains no part of the key | |
 | F18 | `voice-agent voice` on a network that blocks WebSockets (or with the Wi-Fi off) | `Could not connect to the OpenAI Realtime API …` and exit; no traceback, no leftover process | |
 | F19 | `voice-agent voice` without `pip install -e ".[voice]"` | Message explaining how to install the audio packages, or to use `--type` | |
 | F15 | `EMBEDDINGS_PROVIDER=openai` with an empty `OPENAI_API_KEY`, then `voice-agent ask "hours"` | Clear error: `OPENAI_API_KEY is not set …`; no crash trace | |

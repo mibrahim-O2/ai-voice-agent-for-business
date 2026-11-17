@@ -23,6 +23,24 @@ from typing import Any
 
 MAX_TEXT = 2000
 
+
+def _luhn_valid(digits: str) -> bool:
+    total = 0
+    for i, ch in enumerate(reversed(digits)):
+        n = int(ch)
+        if i % 2 == 1:
+            n = n * 2 - 9 if n > 4 else n * 2
+        total += n
+    return total % 10 == 0
+
+
+def _redact_card(match: re.Match[str]) -> str:
+    digits = re.sub(r"\D", "", match.group(0))
+    return "[REDACTED_CARD]" if _luhn_valid(digits) else match.group(0)
+
+
+_CARD_RE = re.compile(r"\b(?:\d[ -]?){12,18}\d\b")  # 13-19 digits, optional spaces/dashes
+
 _REDACTIONS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bsk-[A-Za-z0-9_\-*]{6,}"), "[REDACTED_KEY]"),
     (
@@ -30,8 +48,6 @@ _REDACTIONS: list[tuple[re.Pattern[str], str]] = [
         "[REDACTED_KEY]",
     ),
     (re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/\-]{16,}"), "Bearer [REDACTED]"),
-    # 13-19 digits, optionally separated by spaces or dashes: payment card numbers
-    (re.compile(r"\b(?:\d[ -]?){12,18}\d\b"), "[REDACTED_CARD]"),
 ]
 
 EVENT_TYPES = frozenset(
@@ -54,6 +70,7 @@ EVENT_TYPES = frozenset(
 def redact_text(text: str) -> str:
     for pattern, replacement in _REDACTIONS:
         text = pattern.sub(replacement, text)
+    text = _CARD_RE.sub(_redact_card, text)  # only digit runs that pass the card checksum
     if len(text) > MAX_TEXT:
         text = text[:MAX_TEXT] + f"... [truncated {len(text) - MAX_TEXT} chars]"
     return text

@@ -286,6 +286,8 @@ Approve? [y = approve / anything else = reject]:
   agent tells the caller it couldn't be done and offers a call back.
 - No answer within 120 seconds counts as a rejection. So does any error in the approval step
   (it "fails closed").
+- You only ever see one request at a time. If the agent asks for two actions together, the
+  second waits until you have answered the first.
 - If the caller said something that looked like an attempt to manipulate the agent earlier in
   the call, a `WARNING:` line is shown with the request.
 - To try the agent without changing any data, start it with `--auto-reject`
@@ -322,6 +324,7 @@ action never ran.
 | `Could not connect to the OpenAI Realtime API (… HTTP 405 …)` | Your network or proxy blocks WebSockets. Try another network, or use `voice-agent text` |
 | `Microphone mode needs the optional audio packages` | `pip install -e ".[voice]"`; on Linux also `sudo apt install libportaudio2`; or use `voice-agent voice --type` |
 | The agent hears itself and interrupts | Use headphones |
+| The agent says "I'm having a technical problem" | A model or network error happened on that turn. The call continues. Look for the `error` event in `var/logs/sessions.jsonl`: it shows the error type and HTTP status (401 = check your key, 429 = rate limit or no credit) |
 | An approval was rejected but I typed y | Only `y` or `yes` approves; check you answered within 120 seconds |
 | `voice-agent text` says `OPENAI_API_KEY is not set` | Add your key to `.env` (step 5), or run `voice-agent demo`, which needs no key |
 | `ask` says "I don't know" for a question the documents do cover | The wording is far from the document's. Rephrase, use OpenAI embeddings, or add the caller's wording to the document |
