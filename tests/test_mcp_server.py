@@ -172,3 +172,21 @@ async def test_stdio_server_end_to_end(tmp_path):
         slots = await c.call_tool("list_available_slots", {})
         assert not slots.is_error  # may be empty once the demo dates have passed
     assert (tmp_path / "state" / "leads.json").exists()
+
+
+@with_client
+async def test_schema_enums_match_the_business_layer(client):
+    from voice_agent.business.qualification import SERVICES, TIMELINES
+    from voice_agent.business.services import SOURCES
+
+    def enum_values(prop):
+        options = prop.get("anyOf", [prop])
+        return next(tuple(o["enum"]) for o in options if "enum" in o)
+
+    tools = {t.name: t for t in (await client.list_tools()).tools}
+    props = tools["create_lead"].input_schema["properties"]
+    assert enum_values(props["service_interest"]) == SERVICES
+    assert enum_values(props["timeline"]) == TIMELINES
+    assert enum_values(props["source"]) == SOURCES
+    update_status = enum_values(tools["update_lead"].input_schema["properties"]["status"])
+    assert "booked" not in update_status and "qualified" in update_status

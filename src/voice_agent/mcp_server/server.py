@@ -20,22 +20,20 @@ from mcp_types import ToolAnnotations
 from pydantic import Field
 
 from ..business import BusinessError, BusinessService, DataStore
+from ..business.qualification import SERVICES, TIMELINES
+from ..business.services import SOURCES
 from ..config import Settings, load_settings
+from ..data_models import LeadStatus, LeadTier
 from .tools import TOOL_POLICIES
 
-Status = Literal["new", "contacted", "qualified", "unqualified", "booked"]
-Tier = Literal["hot", "warm", "cold"]
-Timeline = Literal["this_week", "this_month", "next_quarter", "just_researching"]
-Service = Literal[
-    "AC repair",
-    "Furnace installation",
-    "Plumbing repair",
-    "Water heater installation",
-    "Electrical inspection",
-    "Duct cleaning",
-    "Annual maintenance plan",
-]
-Source = Literal["inbound_call", "website_form", "referral", "google_ads", "facebook_ads"]
+# Enum types are built from the business layer's tuples, so the MCP schema and the business
+# validation can never disagree.
+Status = Literal[tuple(s.value for s in LeadStatus)]
+EditableStatus = Literal[tuple(s.value for s in LeadStatus if s is not LeadStatus.BOOKED)]
+Tier = Literal[tuple(t.value for t in LeadTier)]
+Timeline = Literal[TIMELINES]
+Service = Literal[SERVICES]
+Source = Literal[SOURCES]
 LeadId = Annotated[str, Field(description="Lead id, for example L-001", max_length=12)]
 
 INSTRUCTIONS = (
@@ -126,7 +124,7 @@ def build_server(svc: BusinessService) -> MCPServer:
     @_register(server, "update_lead", "SENSITIVE (needs approval). Change fields on an existing lead.")
     def update_lead(
         lead_id: LeadId,
-        status: Literal["new", "contacted", "qualified", "unqualified"] | None = None,
+        status: EditableStatus | None = None,
         service_interest: Service | None = None,
         budget_usd: Annotated[int | None, Field(ge=0, le=1_000_000)] = None,
         timeline: Timeline | None = None,
