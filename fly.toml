@@ -1,10 +1,11 @@
-# Fly.io configuration for the voice-agent backend. See docs/03-deployment.md, Part B.
+# Fly.io configuration for the voice-agent backend (run `fly deploy` from the repo root).
+# See docs/03-deployment.md, Part B.
 # Set your own unique app name below (or pass --app). The key is NOT here: use `fly secrets set`.
 app = "oakleaf-voice-agent-demo"
 primary_region = "ord"   # Chicago, matching the demo calendar's timezone; pick one near you
 
 [build]
-  dockerfile = "../Dockerfile"
+  dockerfile = "Dockerfile"
 
 [env]
   EMBEDDINGS_PROVIDER = "local"
