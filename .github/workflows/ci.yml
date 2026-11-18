@@ -57,3 +57,22 @@ jobs:
         env:
           OPENAI_API_KEY: ""
         run: pytest
+
+  docker:
+    # Builds the backend image and runs the offline demo inside it (no key, no secrets).
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build image
+        run: docker build -t voice-agent:ci .
+      - name: Smoke test inside the container
+        run: |
+          docker run --rm voice-agent:ci sh -c 'test "$(id -un)" = agent && test -z "${OPENAI_API_KEY:-}" && test ! -e /app/.env'
+          docker volume create va-ci
+          docker run --rm -v va-ci:/var/lib/voice-agent voice-agent:ci voice-agent demo
+          docker run --rm -v va-ci:/var/lib/voice-agent voice-agent:ci voice-agent approvals --demo | tee approvals.txt
+          grep -q "5 approved, 1 rejected, 1 pending" approvals.txt
+          docker run --rm voice-agent:ci voice-agent ask "Do you accept cash?" | grep -q "07-payment-and-warranty.md"

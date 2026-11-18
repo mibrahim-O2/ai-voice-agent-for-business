@@ -1,0 +1,22 @@
+# Fly.io configuration for the voice-agent backend. See docs/03-deployment.md, Part B.
+# Set your own unique app name below (or pass --app). The key is NOT here: use `fly secrets set`.
+app = "oakleaf-voice-agent-demo"
+primary_region = "ord"   # Chicago, matching the demo calendar's timezone; pick one near you
+
+[build]
+  dockerfile = "../Dockerfile"
+
+[env]
+  EMBEDDINGS_PROVIDER = "local"
+  OPENAI_TEXT_MODEL = "gpt-4.1-mini"
+  OPENAI_REALTIME_MODEL = "gpt-realtime-mini"
+  LOG_LEVEL = "INFO"
+
+# Keeps the CRM copy, knowledge index and call logs across restarts and deploys.
+[mounts]
+  source = "voice_agent_data"
+  destination = "/var/lib/voice-agent"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
