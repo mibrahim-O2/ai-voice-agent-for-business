@@ -119,3 +119,11 @@ def test_app_script_never_injects_html():
     app = (DASHBOARD / "assets" / "app.js").read_text()
     assert "innerHTML" not in app and "insertAdjacentHTML" not in app and "eval(" not in app
     assert "data.meta.demo !== true" in app  # refuses a snapshot not marked as demo data
+
+
+def test_section_navigation_uses_links_with_aria_current():
+    app = (DASHBOARD / "assets" / "app.js").read_text()
+    assert 'role: "tab"' not in app and "aria-selected" not in app
+    assert '"aria-current": currentTab() === id ? "page" : null' in app
+    css = (DASHBOARD / "assets" / "styles.css").read_text()
+    assert '.tab[aria-current="page"]' in css

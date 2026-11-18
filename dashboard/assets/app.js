@@ -271,9 +271,9 @@
 
   function renderTabs() {
     const nav = document.getElementById("tabs");
-    nav.replaceChildren(...TABS.map(([id, label]) => h("button", {
-      class: "tab", type: "button", role: "tab", "aria-selected": currentTab() === id ? "true" : "false",
-      onclick: () => { location.hash = id; },
+    // Section navigation: plain links; the active one carries aria-current="page".
+    nav.replaceChildren(...TABS.map(([id, label]) => h("a", {
+      class: "tab", href: `#${id}`, "aria-current": currentTab() === id ? "page" : null,
     }, [label])));
   }
 

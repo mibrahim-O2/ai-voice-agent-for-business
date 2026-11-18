@@ -143,9 +143,10 @@ a { color: var(--brand-strong); }
   padding: 7px 12px;
   border-radius: 999px;
   cursor: pointer;
+  text-decoration: none;
 }
 .tab:hover { background: var(--surface-2); color: var(--text); }
-.tab[aria-selected="true"] { background: var(--brand-soft); color: var(--brand-strong); font-weight: 600; }
+.tab[aria-current="page"] { background: var(--brand-soft); color: var(--brand-strong); font-weight: 600; }
 .theme-btn {
   border: 1px solid var(--border);
   background: var(--surface);
