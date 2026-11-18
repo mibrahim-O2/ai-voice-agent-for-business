@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Demo dashboard for an AI voice agent with MCP tools, RAG and human-in-the-loop approvals: calls, leads, bookings, approvals and knowledge sources from scripted sample calls.">
+  <title>Voice Agent Dashboard (demo data)</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="demo-banner" role="note">
+    <strong>DEMO DATA</strong>
+    <span id="demo-notice">Scripted sample calls for a fictional company. No real people, numbers or customers.</span>
+  </div>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true">
+        <rect width="36" height="36" rx="10" class="brand-bg"/>
+        <path d="M10 20v-4M14 23v-10M18 26V10M22 23V13M26 20v-4" class="brand-wave"/>
+      </svg>
+      <div>
+        <div class="brand-name">Voice Agent Dashboard</div>
+        <div class="brand-sub" id="company">Oakleaf Home Services (fictional)</div>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch colour theme"></button>
+  </header>
+  <main id="main" class="main" tabindex="-1">
+    <p class="loading" id="loading">Loading demo snapshot…</p>
+  </main>
+  <footer class="footer">
+    <span id="footer-meta"></span>
+    <a href="https://github.com/mibrahim-O2/ai-voice-agent-for-business" rel="noopener">Source on GitHub</a>
+  </footer>
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+  <noscript><p class="noscript">This dashboard needs JavaScript to render the demo snapshot.</p></noscript>
+  <script src="config.js"></script>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
