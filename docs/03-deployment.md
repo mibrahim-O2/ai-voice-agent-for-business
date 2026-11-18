@@ -76,10 +76,11 @@ November 2026, see Sources): check it before you deploy.
 
 ### What gets deployed
 
-- `Dockerfile` (repository root): Python 3.12 slim, the package installed normally, the demo
+- `Dockerfile` (repository root): Python 3.12 slim, the package installed normally with the exact
+  tested dependency versions from `constraints.txt`, the demo
   data in `/app/data`, runs as an unprivileged user `agent`, and checks the data and builds the
   local knowledge index **while building**. The container idles (`sleep infinity`); you work in
-  it over SSH. **No secret is in the image**: `.dockerignore` excludes `.env`, and CI checks
+  it over SSH; it stops cleanly on SIGTERM (CI checks this). **No secret is in the image**: `.dockerignore` excludes `.env`, and CI checks
   that the built image has no `OPENAI_API_KEY` and no `.env`.
 - `fly.toml` (repository root): app name, region, environment variables, the volume
   mount at `/var/lib/voice-agent`, and the VM size.

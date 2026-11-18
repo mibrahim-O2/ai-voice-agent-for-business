@@ -32,7 +32,7 @@ human-in-the-loop approval for sensitive actions. A static dashboard is deployed
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+pip install -c constraints.txt -e ".[dev]"     # exact tested versions (CI and Docker use them too)
 
 ruff check . && ruff format --check .   # lint
 pytest                                  # tests (offline)

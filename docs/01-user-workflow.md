@@ -43,7 +43,9 @@ pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-This installs the project and the `voice-agent` command.
+This installs the project and the `voice-agent` command. To get exactly the dependency versions
+the project was tested with (recommended if something behaves differently), use
+`pip install -c constraints.txt -e ".[dev]"` instead.
 
 ## 5. Add your OpenAI API key
 
