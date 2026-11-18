@@ -59,7 +59,8 @@ class Settings:
         if not self.openai_api_key:
             raise ConfigError(
                 "OPENAI_API_KEY is not set. Copy .env.example to .env and add your own key, "
-                "or export OPENAI_API_KEY in your shell. Offline text mode and the tests do not need it."
+                "or export OPENAI_API_KEY in your shell (on a server: set it in the platform's secret "
+                "store, e.g. `fly secrets set`). The demo and the tests do not need it."
             )
         return self.openai_api_key
 

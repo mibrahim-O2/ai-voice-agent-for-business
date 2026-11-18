@@ -32,7 +32,7 @@ human-in-the-loop approval for sensitive actions. A static dashboard is deployed
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+pip install -c constraints.txt -e ".[dev]"     # exact tested versions (CI and Docker use them too)
 
 ruff check . && ruff format --check .   # lint
 pytest                                  # tests (offline)
@@ -49,6 +49,9 @@ voice-agent text [--auto-reject]        # live text agent (key needed)
 voice-agent voice [--type]              # live Realtime voice agent (key + WebSocket egress needed)
 voice-agent approvals [--demo]          # approval requests and decisions
 python scripts/generate_dummy_data.py   # regenerate leads/calendar (deterministic)
+python scripts/export_demo_snapshot.py  # re-record dashboard/demo/snapshot.json (a test checks it is current)
+cd dashboard && python -m http.server   # preview the dashboard
+docker build -t voice-agent .           # backend image (fly.toml deploys it to Fly.io)
 ```
 
 ## Layout
@@ -65,6 +68,7 @@ src/voice_agent/     package: config, data_models, cli
 data/                fictional leads, calendar and knowledge documents
 scripts/             data generator, secret scanner, demo snapshot export
 tests/               pytest suite
-dashboard/           static GitHub Pages dashboard (Task 5)
+dashboard/           static GitHub Pages dashboard: demo snapshot only, strict CSP, no secrets,
+                     DOM built with textContent (never innerHTML)
 docs/                01-user-workflow, 02-manual-testing, 03-deployment
 ```

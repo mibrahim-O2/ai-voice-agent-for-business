@@ -1,8 +1,7 @@
 # 01: User workflow (run it on your own computer)
 
 This guide takes you from nothing to a running AI voice agent on your own machine. It is written
-for beginners: copy each command exactly. Sections marked *(coming in Task N)* are filled in when
-that part of the project is built.
+for beginners: copy each command exactly.
 
 > Everything in this project uses **fictional demo data**. You only need your own OpenAI API key
 > for live text mode, voice mode and OpenAI embeddings. The tests run without a key.
@@ -44,7 +43,9 @@ pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-This installs the project and the `voice-agent` command.
+This installs the project and the `voice-agent` command. To get exactly the dependency versions
+the project was tested with (recommended if something behaves differently), use
+`pip install -c constraints.txt -e ".[dev]"` instead.
 
 ## 5. Add your OpenAI API key
 
@@ -86,6 +87,7 @@ voice-agent tools
 | `search_leads` | find leads by name, company, email, phone digits or id; filter by status/tier | no (read-only) |
 | `get_lead` | one lead with notes and appointments | no (read-only) |
 | `list_available_slots` | open one-hour slots in the future, optionally between two dates | no (read-only) |
+| `search_knowledge` | search the business documents (step 8) | no (read-only) |
 | `create_lead` | create a new lead | **yes** |
 | `update_lead` | change fields on a lead | **yes** |
 | `qualify_lead` | score 0–100, set tier (hot ≥ 70, warm ≥ 40, cold) and save it | **yes** |
@@ -93,7 +95,8 @@ voice-agent tools
 | `book_appointment` | book an open slot for a lead | **yes** |
 | `cancel_appointment` | cancel a booking (a $40 late fee is reported if < 24 h before) | **yes** |
 
-Every tool that changes data is "sensitive". The approval step itself is added in Task 4.
+Every tool that changes data is "sensitive": when the agent wants to use one, a person must
+approve it first (step 10). `search_knowledge` is the knowledge-base search from step 8.
 
 ### 7b. Start the server
 
@@ -303,9 +306,50 @@ voice-agent approvals --demo       # the demo calls: 5 approved, 1 rejected, 1 p
 "Pending" means the call ended (for example the caller hung up) before anyone decided, so the
 action never ran.
 
-## 11. View the dashboard *(coming in Task 5)*
+## 11. View the dashboard
 
-## 12. Troubleshooting
+**Online:** https://mibrahim-o2.github.io/ai-voice-agent-for-business/
+
+The dashboard shows the **demo calls** from step 9a: calls handled, leads by tier and status,
+appointments, approvals (approved, rejected, pending), which knowledge documents answers came
+from, and full transcripts with every tool call and decision. A yellow **DEMO DATA** banner is
+always shown: everything is fictional and the calls are scripted. The dashboard is a static
+page; it never calls OpenAI and contains no keys.
+
+**On your computer:**
+
+```bash
+cd dashboard
+python -m http.server 8000         # then open http://localhost:8000 in your browser
+```
+
+(Opening `index.html` directly from the file system doesn't work, because browsers block it
+from loading the snapshot file. Use the small server above.)
+
+**Refresh the data** after changing the demo, the tools or the knowledge base:
+
+```bash
+python scripts/export_demo_snapshot.py      # re-records dashboard/demo/snapshot.json
+```
+
+Tabs: **Overview** (headline numbers and charts), **Calls** (pick a call to read its
+transcript), **Leads** (filter by tier or status, search), **Appointments**, **Approvals** and
+**Knowledge**. The **Theme** button switches between system, light and dark.
+
+## 12. Deploy it (optional)
+
+- Dashboard on GitHub Pages: see [03-deployment.md, Part A](03-deployment.md).
+- Backend on Fly.io (about $4 a month), with your key kept in Fly's secret store: see
+  [03-deployment.md, Part B](03-deployment.md).
+- To try the backend container locally (Docker needed):
+
+  ```bash
+  docker build -t voice-agent .
+  docker run --rm -it voice-agent voice-agent demo
+  docker run --rm -it -e OPENAI_API_KEY voice-agent voice-agent text   # passes the key from your shell
+  ```
+
+## 13. Troubleshooting
 
 | Problem | Fix |
 |---|---|
@@ -327,7 +371,9 @@ action never ran.
 | The agent says "I'm having a technical problem" | A model or network error happened on that turn. The call continues. Look for the `error` event in `var/logs/sessions.jsonl`: it shows the error type and HTTP status (401 = check your key, 429 = rate limit or no credit) |
 | An approval was rejected but I typed y | Only `y` or `yes` approves; check you answered within 120 seconds |
 | `voice-agent text` says `OPENAI_API_KEY is not set` | Add your key to `.env` (step 5), or run `voice-agent demo`, which needs no key |
+| The dashboard shows "could not load the demo snapshot" | Serve it with `python -m http.server` (step 11) instead of opening the file directly |
+| `test_committed_snapshot_is_up_to_date` fails | Run `python scripts/export_demo_snapshot.py` and commit the new snapshot |
 | `ask` says "I don't know" for a question the documents do cover | The wording is far from the document's. Rephrase, use OpenAI embeddings, or add the caller's wording to the document |
 | `pip` errors about Python version | Check `python --version` is 3.11 or newer |
 
-More rows are added as features are built.
+Still stuck? Run `pytest` and `voice-agent validate-data` first: they check most of the setup.

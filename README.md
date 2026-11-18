@@ -9,6 +9,9 @@ booking or cancelling an appointment. A static **dashboard on GitHub Pages** sho
 lead tiers, bookings, approvals and RAG sources from sample session logs. Python, offline-testable,
 no paid vector database.
 
+**Live demo dashboard (scripted sample calls, demo data):**
+https://mibrahim-o2.github.io/ai-voice-agent-for-business/
+
 > **Demo data only.** The company (Oakleaf Home Services), every lead, phone number and email in
 > this repository is fictional. No real API keys are stored anywhere in the repo.
 
@@ -20,7 +23,7 @@ no paid vector database.
 | 2. MCP server | CRM and calendar tools with validation and sensitivity flags | ✅ done |
 | 3. RAG | Local ingest, embeddings, vector store, retrieval tool with "I don't know" rule | ✅ done |
 | 4. Agent + HITL | Text and Realtime voice agent, approval gate, guardrails, structured logs | ✅ done |
-| 5. Dashboard | Static GitHub Pages dashboard and deployment guides | planned |
+| 5. Dashboard | Static GitHub Pages dashboard and deployment guides | ✅ done |
 
 ## Quick start
 
@@ -57,10 +60,12 @@ src/voice_agent/   Python package
   hitl.py          human approval gate (summaries, fail-closed, logged decisions)
   observability.py structured, redacted JSONL session logs
 data/              fictional leads, calendar and knowledge documents (see data/README.md)
-scripts/           dummy-data generator and secret scanner
+scripts/           dummy-data generator, secret scanner, dashboard snapshot export
 tests/             pytest suite (runs offline)
 docs/              user workflow, manual testing checklist, deployment guide
-.github/workflows/ CI (lint, secret scan, data validation, tests)
+dashboard/         static GitHub Pages dashboard (demo snapshot, no secrets)
+Dockerfile, fly.toml  backend container and Fly.io deployment
+.github/workflows/ CI (lint, secret scan, data validation, tests, Docker smoke test) and Pages deploy
 ```
 
 ## How a call works
