@@ -10,9 +10,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     EMBEDDINGS_PROVIDER=local
 
 WORKDIR /app
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md constraints.txt ./
 COPY src ./src
-RUN pip install --upgrade pip && pip install . && rm -rf /root/.cache build
+# Exact, tested dependency versions (constraints.txt), so every build installs the same thing.
+RUN pip install --upgrade pip && pip install -c constraints.txt . && rm -rf /root/.cache build
 COPY data ./data
 
 # Run as an unprivileged user; runtime state (CRM copy, index, logs) lives on a volume.
@@ -25,4 +26,5 @@ RUN voice-agent validate-data && voice-agent ingest
 
 # The container idles; operators connect (e.g. `fly ssh console`) and run voice-agent text,
 # voice --type, demo or approvals in that terminal, where approvals are answered.
-CMD ["sleep", "infinity"]
+# PID 1 must handle SIGTERM, or every stop waits for the kill timeout and ends in SIGKILL.
+CMD ["sh", "-c", "trap 'exit 0' TERM INT; sleep infinity & wait"]
