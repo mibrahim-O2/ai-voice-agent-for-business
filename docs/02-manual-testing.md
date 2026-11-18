@@ -1,6 +1,6 @@
 # 02: Manual testing checklist
 
-Run this checklist **after the whole project is complete** (after Task 5). Automated tests cover
+Run this checklist now that the project is complete. Automated tests cover
 the logic offline; this checklist checks the real experience: the live OpenAI model, your
 microphone, the approval prompts and the deployed dashboard.
 
@@ -30,8 +30,8 @@ regenerate the calendar first (see 01-user-workflow, troubleshooting).
 
 | # | Step | Expected result | Pass/Fail |
 |---|---|---|---|
-| B1 | Run `voice-agent tools` | 9 tools; the 6 write tools show `YES` under sensitive, the 3 read tools show `no` | |
-| B2 | Inspector: List Tools | 9 tools; each sensitive tool's description starts with `SENSITIVE` | |
+| B1 | Run `voice-agent tools` | 10 tools; the 6 write tools show `YES` under sensitive, the 4 read tools (including `search_knowledge`) show `no` | |
+| B2 | Inspector: List Tools | 10 tools; each sensitive tool's description starts with `SENSITIVE` | |
 | B3 | `search_leads` with `query` = `calloway` | 1 lead, `L-003`, Cleo Calloway | |
 | B4 | `search_leads` with `status` = `booked` | `count` 3, every lead `booked` | |
 | B5 | `get_lead` with `lead_id` = `L-003` | Lead details, notes and one `booked` appointment | |
@@ -117,7 +117,32 @@ Run `voice-agent reset-data` first. Use `voice-agent text` (your key is needed).
 | F14 | `cancel_appointment` for an appointment whose start time has passed (use a demo date that is already in the past, or skip if none) | Error: already started or taken place; no late fee | |
 | F1 | Empty `OPENAI_API_KEY` in `.env`, then `voice-agent text` | A clear message: `OPENAI_API_KEY is not set. Copy .env.example to .env…` and a tip to run `voice-agent demo`; no crash trace | |
 
-## G. Dashboard *(steps added in Task 5)*
+## G. Dashboard
+
+Do G1–G8 on the live site (https://mibrahim-o2.github.io/ai-voice-agent-for-business/) and
+G9–G10 locally.
+
+| # | Step | Expected result | Pass/Fail |
+|---|---|---|---|
+| G1 | Open the live URL | The page loads; a yellow **DEMO DATA** banner says the calls are scripted and the company fictional | |
+| G2 | Overview | 7 calls handled, 2 appointments booked, approvals 5 approved / 1 rejected / 1 pending, 4 knowledge searches (1 "I don't know"), 2 hand-offs | |
+| G3 | Hover (or tab to) a bar | A tooltip shows the value and its share | |
+| G4 | **Calls** → "Cancellation request rejected by the reviewer" | Transcript shows the approval request, a red **Rejected** decision, and the agent saying it couldn't cancel | |
+| G5 | **Calls** → "Caller hangs up while a note is waiting for approval" | The request is shown with no decision; Approvals tab lists it as **Pending** | |
+| G6 | **Leads** → Tier = Hot; then search `rowan` | 6 hot leads; the search finds L-026 Rowan Testcaller (score 83) | |
+| G7 | **Knowledge** | Sources used (Services and pricing, Business hours, Emergency service, FAQ) and 1 search with **Not found** | |
+| G8 | Click **Theme** until Dark; then make the window phone-sized | Dark colours, all text readable; on a narrow window nothing is cut off and there is no sideways scrolling | |
+| G9 | Browser dev tools → Network tab, reload | Only files from the same site load; no requests to OpenAI or any other host | |
+| G10 | `cd dashboard && python -m http.server 8000`, open http://localhost:8000 | Same dashboard locally | |
+| G11 | `python scripts/export_demo_snapshot.py`, then `git status` | Snapshot re-recorded; `git diff` shows at most a changed `recorded_on` date | |
+
+## H. Deployment (optional)
+
+| # | Step | Expected result | Pass/Fail |
+|---|---|---|---|
+| H1 | GitHub → **Actions → Deploy dashboard to GitHub Pages** | Last run green; the secret and demo-mode checks passed | |
+| H2 | `docker build -t voice-agent .` then `docker run --rm voice-agent voice-agent demo` | Image builds; 7 demo calls run inside the container | |
+| H3 | Follow 03-deployment.md Part B on Fly.io, then `fly ssh console` → `voice-agent demo` and `voice-agent approvals --demo` | `5 approved, 1 rejected, 1 pending`; `fly secrets list` shows only a digest for `OPENAI_API_KEY` | |
 
 ## Summary
 
@@ -130,3 +155,4 @@ Run `voice-agent reset-data` first. Use `voice-agent text` (your key is needed).
 | E. Text and voice | | | |
 | F. Errors | | | |
 | G. Dashboard | | | |
+| H. Deployment | | | |
